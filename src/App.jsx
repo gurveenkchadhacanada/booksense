@@ -29,7 +29,7 @@ const CRITERIA = [
   {id:"engagement",label:"Engagement Gap"},{id:"arrValue",label:"ARR Value"},{id:"supportHealth",label:"Support Health"},
 ];
 
-function score(a, criteria) {
+function score(a, criteria, outcomes) {
   const w = {}; criteria.forEach((c,i) => { w[c.id] = 1.0 + (criteria.length-1-i)*0.25; });
   let u=0, r=0, o=0; const reasons = [];
   if(a.daysUntilRenewal<=21){u+=40*w.renewal;reasons.push(`Renewal in ${a.daysUntilRenewal}d`);}
@@ -55,7 +55,11 @@ function score(a, criteria) {
   if(a.notes.includes("champion")&&a.notes.includes("left")){r+=18;reasons.push("Champion departed");}
   if(a.notes.includes("Series B")||a.notes.includes("headcount")){o+=12;reasons.push("Company scaling");}
   if(a.notes.includes("migration")||a.notes.includes("data export")){r+=20;reasons.push("Migration/export activity");}
-  const sc=Math.min(100,Math.round((u+r+o)*am));
+  const oc=outcomes?.[a.id];
+  if(oc?.rating==="negative"){r+=15;reasons.push("Previous interaction: Negative — escalated priority");}
+  if(oc?.rating==="neutral"){reasons.push("Previous interaction: Neutral — monitoring");}
+  let sc=Math.min(100,Math.round((u+r+o)*am));
+  if(oc?.rating==="positive"){sc=Math.max(0,sc-10);reasons.push("Previous interaction: Positive — reduced urgency");}
   const cat=r>=o&&r>=u?"risk":u>=o?"urgency":"opportunity";
   const rl=sc>=75?"critical":sc>=50?"high":sc>=30?"medium":"low";
   let action="Routine check-in",impact="Maintain cadence";
@@ -185,7 +189,8 @@ function Manager({scored,cherry,gaps,actions,outcomes,portfolioAI}){
         <div style={{fontSize:12,fontWeight:600,color:S.tx,marginBottom:2}}>{g.desc}</div>
         <div style={{fontSize:10,color:S.ri}}>{g.risk}</div></div>)}</div>}
     {Object.keys(outcomes).length>0&&<div style={{background:S.sf,border:`1px solid ${S.bd}`,borderRadius:8,padding:18}}>
-      <div style={{fontSize:10,fontWeight:700,color:S.mu,textTransform:"uppercase",marginBottom:10}}>Outcome Log</div>
+      <div style={{fontSize:10,fontWeight:700,color:S.mu,textTransform:"uppercase",marginBottom:6}}>Outcome Log</div>
+      <div style={{fontSize:10,color:S.so,marginBottom:10,lineHeight:1.5}}>Outcomes feed back into AI scoring. Negative outcomes escalate priority. Positive outcomes reduce urgency.</div>
       {Object.entries(outcomes).map(([id,o])=>{const acc=scored.find(a=>a.id===Number(id));const oc=o.rating==="positive"?S.op:o.rating==="neutral"?S.ur:S.ri;return acc?<div key={id} style={{padding:10,background:S.bg,borderRadius:5,borderLeft:`3px solid ${oc}`,marginBottom:5,display:"flex",alignItems:"center",gap:10}}>
         <div style={{width:8,height:8,borderRadius:"50%",background:oc,flexShrink:0}}/>
         <div style={{flex:1}}>
@@ -253,7 +258,7 @@ export default function BookSense(){
   const[outcomeNote,setOutcomeNote]=useState("");
   const[portfolioAI,setPortfolioAI]=useState(null);
 
-  const scored=useMemo(()=>ACCOUNTS.map(a=>score(a,criteria)).sort((a,b)=>b.score-a.score),[criteria]);
+  const scored=useMemo(()=>ACCOUNTS.map(a=>score(a,criteria,outcomes)).sort((a,b)=>b.score-a.score),[criteria,outcomes]);
   const cherry=useMemo(()=>{
     const ov=scored.filter(a=>a.totalTouchpoints>=8&&a.arr<=15000),un=scored.filter(a=>a.totalTouchpoints<=2&&a.arr>=50000);
     if(ov.length>=2&&un.length>=2)return{detected:true,pattern:"CSM over-indexes on low-value E-commerce while neglecting high-value Manufacturing/Logistics.",evidence:`Over-serviced: ${ov.map(a=>`${a.name} (${a.totalTouchpoints} touches, $${(a.arr/1000)}k)`).join(", ")}. Under-serviced: ${un.map(a=>`${a.name} (${a.totalTouchpoints} touches, $${(a.arr/1000)}k)`).join(", ")}. 10x ARR gap.`,rec:"No $50k+ account goes 30 days untouched. Redistribute from Starters."};
@@ -326,7 +331,8 @@ export default function BookSense(){
           <div style={{fontSize:10,fontWeight:600,fontFamily:"monospace",color:S.tx}}>${(a.arr/1000)|0}k</div>
           <div style={{fontSize:10,fontWeight:600,fontFamily:"monospace",color:a.usageTrend<0?S.ri:S.op}}>{a.usageTrend>0?"+":""}{a.usageTrend}%</div>
           <div style={{fontSize:10,fontFamily:"monospace",color:a.daysUntilRenewal<=30?S.ri:a.daysUntilRenewal<=60?S.ur:S.mu}}>{a.daysUntilRenewal}d</div>
-          <span style={{background:cc[a.category]+"18",color:cc[a.category],border:`1px solid ${cc[a.category]}44`,padding:"2px 7px",borderRadius:4,fontSize:9,fontWeight:700,textTransform:"uppercase"}}>{a.category}</span>
+          <div><span style={{background:cc[a.category]+"18",color:cc[a.category],border:`1px solid ${cc[a.category]}44`,padding:"2px 7px",borderRadius:4,fontSize:9,fontWeight:700,textTransform:"uppercase"}}>{a.category}</span>
+            {outcomes[a.id]&&<div style={{fontSize:8,color:outcomes[a.id].rating==="positive"?S.op:outcomes[a.id].rating==="neutral"?S.ur:S.ri,marginTop:2}}>🔄 {outcomes[a.id].rating.charAt(0).toUpperCase()+outcomes[a.id].rating.slice(1)}</div>}</div>
           <div style={{fontSize:9,fontWeight:600,color:rc[a.riskLevel]}}>{a.riskLevel}</div>
           <div onClick={()=>{setSelected(a);setView("detail");}} style={{fontSize:10,color:S.so,lineHeight:1.35,overflow:"hidden",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>{a.action}</div>
           <div style={{display:"flex",gap:3,alignItems:"center"}} onClick={e=>e.stopPropagation()}>
