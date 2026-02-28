@@ -77,6 +77,8 @@ const rc={critical:S.ri,high:"#fb923c",medium:S.ur,low:S.op};
 
 async function aiDeepDive(a){try{const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1200,messages:[{role:"user",content:`Brief a CSM. ${a.name}|${a.industry}|${a.tier}|$${a.arr}|Usage:${a.usageTrend}%|Touch:${a.daysSinceLastTouch}d|Renewal:${a.daysUntilRenewal}d|Tickets:${a.openTickets}|NPS:${a.npsScore}|Touchpoints:${a.totalTouchpoints}|${a.notes}\nSignals — CRM:${a.crmNotes||""}|Support:${a.supportTranscript||""}|Email:${a.recentEmail||""}\nReturn ONLY JSON:{"headline":"<1 sentence>","brief":"<2 sentence synthesis of CRM notes, support transcript, and email signals — what do these unstructured sources collectively reveal about this account>","assessment":"<3 sentences>","first_action":"<specific>","talking_points":["<3>"],"watch_out":"<risk>"}`}]})});const d=await r.json();return JSON.parse((d.content?.[0]?.text||"").replace(/```json\s*/g,"").replace(/```/g,"").trim());}catch{return null;}}
 
+async function portfolioAnalysis(){try{const d=ACCOUNTS.map(a=>`${a.name}|${a.industry}|${a.tier}|$${a.arr}|Usage:${a.usageTrend}%|Touch:${a.daysSinceLastTouch}d|Renewal:${a.daysUntilRenewal}d|Tickets:${a.openTickets}|NPS:${a.npsScore}|Touchpoints:${a.totalTouchpoints}|Notes:${a.notes}|CRM:${a.crmNotes||""}|Support:${a.supportTranscript||""}|Email:${a.recentEmail||""}`).join("\n");const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:`Analyze this CSM portfolio of 20 accounts with their unstructured signals:\n${d}\nReturn ONLY JSON:{"portfolio_summary":"<3-4 sentence narrative assessment of the entire portfolio — highlight key risks, opportunities, and overall health>","cross_account_patterns":["<identify connections between accounts — people who moved between companies, shared industries with contrasting outcomes, referral chains, competitive threats spanning multiple accounts>"],"cherry_picking_analysis":"<1-2 sentences about CSM behavioral patterns across the portfolio>"}`}]})});const j=await r.json();return JSON.parse((j.content?.[0]?.text||"").replace(/```json\s*/g,"").replace(/```/g,"").trim());}catch{return null;}}
+
 function Detail({account:a,onBack}){
   const[ai,setAi]=useState(null);const[loading,setLoading]=useState(true);const[dec,setDec]=useState(null);
   useEffect(()=>{setLoading(true);setAi(null);setDec(null);aiDeepDive(a).then(r=>{setAi(r);setLoading(false);});},[a.id]);
@@ -144,7 +146,7 @@ function Detail({account:a,onBack}){
   </div>);
 }
 
-function Manager({scored,cherry,gaps,actions,outcomes}){
+function Manager({scored,cherry,gaps,actions,outcomes,portfolioAI}){
   const ct=Object.values(actions).filter(v=>v==="contacted").length;
   const sk=Object.values(actions).filter(v=>v==="skipped").length;
   const un=scored.length-ct-sk;
@@ -171,6 +173,9 @@ function Manager({scored,cherry,gaps,actions,outcomes}){
       <div style={{fontSize:12,fontWeight:600,color:S.tx,marginBottom:4}}>{cherry.pattern}</div>
       <div style={{fontSize:11,color:S.so,marginBottom:6}}>{cherry.evidence}</div>
       <div style={{fontSize:11,color:S.ur}}><strong>Coaching:</strong> {cherry.rec}</div></div>}
+    {portfolioAI?.cherry_picking_analysis&&<div style={{background:S.ac+"0d",border:`1px solid ${S.ac}28`,borderRadius:8,padding:18,marginBottom:16}}>
+      <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:8}}><span style={{fontSize:11}}>🤖</span><span style={{fontSize:10,fontWeight:700,color:S.as,textTransform:"uppercase"}}>AI Behavioral Analysis</span></div>
+      <div style={{fontSize:12,lineHeight:1.7,color:S.tx}}>{portfolioAI.cherry_picking_analysis}</div></div>}
     {gaps.length>0&&<div style={{background:S.sf,border:`1px solid ${S.bd}`,borderRadius:8,padding:18,marginBottom:16}}>
       <div style={{fontSize:10,fontWeight:700,color:S.mu,textTransform:"uppercase",marginBottom:10}}>Coverage Gaps</div>
       {gaps.map((g,i)=><div key={i} style={{padding:10,background:S.bg,borderRadius:5,borderLeft:`3px solid ${S.ri}`,marginBottom:5}}>
@@ -214,7 +219,7 @@ function CriteriaPage({criteria,setCriteria,onBack}){
   </div>);
 }
 
-function Welcome({onRun}){
+function Welcome({onRun,onStart}){
   const[running,setRunning]=useState(false);
   const today=new Date().toLocaleDateString("en-US",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
   return(<div style={{minHeight:"100vh",background:S.bg,display:"flex",alignItems:"center",justifyContent:"center"}}>
@@ -225,7 +230,7 @@ function Welcome({onRun}){
       <h1 style={{fontSize:28,fontWeight:700,color:S.tx,marginBottom:8}}>Good morning, Gurveen</h1>
       <p style={{fontSize:14,color:S.mu,marginBottom:6}}>{today}</p>
       <p style={{fontSize:14,color:S.so,marginBottom:36}}><span style={{color:S.tx,fontWeight:600}}>20 accounts</span> ready for AI prioritization.</p>
-      {!running?<button onClick={()=>{setRunning(true);setTimeout(onRun,1800);}} style={{padding:"14px 36px",borderRadius:8,border:"none",cursor:"pointer",background:`linear-gradient(135deg,${S.ac},#6344e0)`,color:S.wh,fontSize:15,fontWeight:700,boxShadow:`0 4px 24px ${S.ac}59`}}>Run Prioritization</button>
+      {!running?<button onClick={()=>{setRunning(true);if(onStart)onStart();setTimeout(onRun,1800);}} style={{padding:"14px 36px",borderRadius:8,border:"none",cursor:"pointer",background:`linear-gradient(135deg,${S.ac},#6344e0)`,color:S.wh,fontSize:15,fontWeight:700,boxShadow:`0 4px 24px ${S.ac}59`}}>Run Prioritization</button>
       :<div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:12}}>
         <div style={{display:"flex",gap:5}}>{[0,1,2,3,4].map(i=><div key={i} style={{width:8,height:8,borderRadius:"50%",background:S.ac,animation:`bp 1.4s ease ${i*.12}s infinite`}}/>)}</div>
         <div style={{fontSize:13,color:S.so}}>Analyzing all accounts...</div></div>}
@@ -243,6 +248,7 @@ export default function BookSense(){
   const[outcomes,setOutcomes]=useState({});
   const[outcomeModal,setOutcomeModal]=useState(null);
   const[outcomeNote,setOutcomeNote]=useState("");
+  const[portfolioAI,setPortfolioAI]=useState(null);
 
   const scored=useMemo(()=>ACCOUNTS.map(a=>score(a,criteria)).sort((a,b)=>b.score-a.score),[criteria]);
   const cherry=useMemo(()=>{
@@ -270,7 +276,7 @@ export default function BookSense(){
   const zt=scored.filter(a=>a.totalTouchpoints===0).length;
   const dark=scored.filter(a=>a.daysSinceLastTouch>60).length;
 
-  if(phase==="welcome")return<><style>{`*{box-sizing:border-box;margin:0}@keyframes bp{0%,100%{opacity:.2}50%{opacity:1}}`}</style><Welcome onRun={()=>setPhase("app")}/></>;
+  if(phase==="welcome")return<><style>{`*{box-sizing:border-box;margin:0}@keyframes bp{0%,100%{opacity:.2}50%{opacity:1}}`}</style><Welcome onRun={()=>setPhase("app")} onStart={()=>{portfolioAnalysis().then(r=>{if(r)setPortfolioAI(r);});}}/></>;
 
   return(<div style={{minHeight:"100vh",background:S.bg,color:S.tx,fontFamily:"-apple-system,'Segoe UI',sans-serif"}}>
     <style>{`*{box-sizing:border-box;margin:0}@keyframes bp{0%,100%{opacity:.2}50%{opacity:1}}@keyframes fi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:${S.bd};border-radius:3px}`}</style>
@@ -282,7 +288,7 @@ export default function BookSense(){
         {[{k:"board",l:"Action Board"},{k:"manager",l:"Manager"},{k:"criteria",l:"⚙ AI Criteria"}].map(t=>
           <button key={t.k} onClick={()=>{setView(t.k);setSelected(null);}} style={{padding:"5px 12px",borderRadius:5,border:"none",cursor:"pointer",fontSize:10,fontWeight:600,background:view===t.k?S.ac:"transparent",color:view===t.k?S.wh:S.mu}}>{t.l}</button>)}</div></div>
     {view==="detail"&&selected?<Detail account={selected} onBack={()=>setView("board")}/>
-    :view==="manager"?<Manager scored={scored} cherry={cherry} gaps={gaps} actions={actions} outcomes={outcomes}/>
+    :view==="manager"?<Manager scored={scored} cherry={cherry} gaps={gaps} actions={actions} outcomes={outcomes} portfolioAI={portfolioAI}/>
     :view==="criteria"?<CriteriaPage criteria={criteria} setCriteria={setCriteria} onBack={()=>setView("board")}/>
     :<div style={{padding:"18px 24px"}}>
       <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap"}}>
@@ -290,10 +296,13 @@ export default function BookSense(){
           <div key={l} style={{background:S.sf,border:`1px solid ${S.bd}`,borderRadius:7,padding:"11px 14px",flex:"1 1 105px",minWidth:105}}>
             <div style={{fontSize:9,color:S.mu,textTransform:"uppercase",letterSpacing:".06em",marginBottom:3}}>{l}</div>
             <div style={{fontSize:19,fontWeight:700,color:c||S.tx,fontFamily:"monospace"}}>{v}</div></div>)}</div>
-      <div style={{background:S.ac+"0d",border:`1px solid ${S.ac}28`,borderRadius:7,padding:14,marginBottom:18}}>
+      <div style={{background:S.ac+"0d",border:`1px solid ${S.ac}28`,borderRadius:7,padding:14,marginBottom:12}}>
         <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6}}>
           <span style={{fontSize:11}}>🤖</span><span style={{fontSize:9,fontWeight:700,color:S.as,textTransform:"uppercase"}}>Portfolio Assessment</span></div>
-        <p style={{fontSize:12,lineHeight:1.7,color:S.tx,margin:0}}>{summary}</p></div>
+        <p style={{fontSize:12,lineHeight:1.7,color:S.tx,margin:0}}>{portfolioAI?.portfolio_summary||summary}</p></div>
+      {portfolioAI?.cross_account_patterns?.length>0&&<div style={{background:S.sf,border:`1px solid ${S.bd}`,borderRadius:7,padding:14,marginBottom:18}}>
+        <div style={{fontSize:9,fontWeight:700,color:S.mu,textTransform:"uppercase",letterSpacing:".06em",marginBottom:8}}>Cross-Account Patterns</div>
+        {portfolioAI.cross_account_patterns.map((p,i)=><div key={i} style={{fontSize:11,color:S.so,padding:"6px 9px",background:S.bg,borderRadius:4,borderLeft:`3px solid ${S.ac}`,marginBottom:3,lineHeight:1.5}}>{p}</div>)}</div>}
       <h2 style={{fontSize:19,fontWeight:700,marginBottom:3}}>Daily Action Board</h2>
       <p style={{fontSize:11,color:S.mu,marginBottom:12}}>Click any row for deep briefing. Mark contacted ✓ or skipped ✗.</p>
       <div style={{display:"flex",gap:5,marginBottom:12,alignItems:"center",flexWrap:"wrap"}}>
