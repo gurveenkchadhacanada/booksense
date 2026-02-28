@@ -224,7 +224,7 @@ function CriteriaPage({criteria,setCriteria,onBack}){
   const di=useRef(null),dv=useRef(null);
   return(<div style={{padding:20,maxWidth:560}}>
     <button onClick={onBack} style={{background:"none",border:"none",color:S.as,cursor:"pointer",fontSize:12,marginBottom:14,padding:0}}>← Back</button>
-    <div style={{marginBottom:10}}><span style={{background:S.ac+"18",color:S.ac,border:`1px solid ${S.ac}44`,padding:"3px 10px",borderRadius:4,fontSize:10,fontWeight:700}}>Q1 Strategy: Retention Mode</span></div>
+    <div style={{marginBottom:10}}><span style={{background:"rgba(124,92,252,0.15)",color:"#b8a5ff",padding:"5px 14px",borderRadius:5,fontSize:13,fontWeight:600,letterSpacing:".02em"}}>Q1 Strategy: Retention Mode</span></div>
     <h2 style={{fontSize:20,fontWeight:700,color:S.tx,marginBottom:4}}>AI Strategy</h2>
     <p style={{fontSize:12,color:S.mu,marginBottom:4}}>Drag to reorder. #1 has most influence. Board re-ranks instantly.</p>
     <p style={{fontSize:11,color:S.ac,marginBottom:20}}>Churn Risk and Renewal Urgency are weighted highest for retention quarters.</p>
@@ -262,7 +262,7 @@ function Welcome({onRun,onStart}){
         <span style={{fontSize:24,fontWeight:700,color:S.tx}}>BookSense</span></div>
       <h1 style={{fontSize:28,fontWeight:700,color:S.tx,marginBottom:8}}>Good morning, Gurveen</h1>
       <p style={{fontSize:14,color:S.mu,marginBottom:6}}>{today}</p>
-      <div style={{marginBottom:10}}><span style={{background:S.ac+"18",color:S.ac,border:`1px solid ${S.ac}44`,padding:"3px 10px",borderRadius:4,fontSize:10,fontWeight:700}}>Q1 Strategy: Retention Mode</span></div>
+      <div style={{marginBottom:10}}><span style={{background:"rgba(124,92,252,0.15)",color:"#b8a5ff",padding:"5px 14px",borderRadius:5,fontSize:13,fontWeight:600,letterSpacing:".02em"}}>Q1 Strategy: Retention Mode</span></div>
       <p style={{fontSize:14,color:S.so,marginBottom:36}}><span style={{color:S.tx,fontWeight:600}}>20 accounts</span> ready for AI prioritization.</p>
       {!running?<button onClick={()=>{setRunning(true);if(onStart)onStart();setTimeout(onRun,4000);}} style={{padding:"14px 36px",borderRadius:8,border:"none",cursor:"pointer",background:`linear-gradient(135deg,${S.ac},#6344e0)`,color:S.wh,fontSize:15,fontWeight:700,boxShadow:`0 4px 24px ${S.ac}59`}}>Run Prioritization</button>
       :<div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:12}}>
