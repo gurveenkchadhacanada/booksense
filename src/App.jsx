@@ -73,8 +73,10 @@ function score(a, criteria, outcomes) {
   else if(a.npsScore>=9&&a.usageTrend>0){action="Advocacy: Request case study. Explore cross-sell.";impact=`Reference value + ${6-a.adoptedProducts.length} products`;}
   else if(a.daysSinceLastTouch>=60){action="Re-engage with usage insights.";impact=`$${(a.arr/1000)|0}k going dark`;}
   let dg=null;
-  if(a.daysUntilRenewal<=30&&(a.usageTrend<-10||a.npsScore<=5))dg={decision:`Offer discount to save $${(a.arr/1000)|0}k?`,whyHuman:"Commits revenue and sets precedent. AI can't weigh relationship history.",options:["15% discount","Add services","Escalate to VP","Hold pricing"]};
-  else if(a.totalTouchpoints===0&&a.arr>=50000)dg={decision:"Acknowledge neglect or start fresh?",whyHuman:"Honesty may build trust or erode confidence.",options:["Acknowledge & recover","Fresh start","White-glove escalation"]};
+  if(a.id===7)dg={decision:"Waive the $4,200 billing dispute to unblock renewal?",whyHuman:"$4,200 write-off sets precedent but $180k renewal is 18 days out and blocked by this dispute.",context:"Waiving may retain $180k ARR but signals that billing disputes are negotiable on future contracts.",options:["Waive dispute","Split the cost","Escalate to billing","Hold firm"]};
+  else if(a.id===15)dg={decision:"Send VP to on-site meeting this week?",whyHuman:"Steve Kowalski threatened vendor evaluation by Friday — a VP visit signals executive commitment.",context:"An on-site visit could save $195k ARR but commits senior leadership time and sets service expectations.",options:["Send VP","Video call first","CSM handles alone","Delay to next week"]};
+  else if(a.daysUntilRenewal<=30&&(a.usageTrend<-10||a.npsScore<=5))dg={decision:`Offer discount to save $${(a.arr/1000)|0}k?`,whyHuman:"Commits revenue and sets precedent. AI can't weigh relationship history.",context:`Discount may retain $${(a.arr/1000)|0}k ARR but sets precedent for future negotiations.`,options:["15% discount","Add services","Escalate to VP","Hold pricing"]};
+  else if(a.totalTouchpoints===0&&a.arr>=50000)dg={decision:"Acknowledge neglect or start fresh?",whyHuman:"Honesty may build trust or erode confidence.",context:"Acknowledging the gap risks confirming their suspicion but may rebuild credibility faster than pretending it didn't happen.",options:["Acknowledge & recover","Fresh start","White-glove escalation"]};
   return{...a,score:sc,displayScore:display,reasons,category:cat,riskLevel:rl,action,impact,decisionGate:dg};
 }
 
@@ -124,6 +126,7 @@ function Detail({account:a,onBack,decisions,setDecisions}){
   const WARN_SIGNALS=/nps|ticket|touch/i;
   const sigColor=(r)=>CRIT_SIGNALS.test(r)?S.ri:WARN_SIGNALS.test(r)?S.ur:S.dm;
   return(<div style={{padding:20}}>
+    <button onClick={onBack} style={{background:"none",border:"none",color:S.as,cursor:"pointer",fontSize:12,marginBottom:14,padding:0}}>← Back to Action Board</button>
     <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap",marginBottom:4}}>
       <h2 style={{fontSize:20,fontWeight:700,color:S.tx,margin:0}}>{a.name}</h2>
       <span style={{background:cc[a.category]+"18",color:cc[a.category],border:`1px solid ${cc[a.category]}44`,padding:"2px 7px",borderRadius:4,fontSize:9,fontWeight:700,textTransform:"uppercase"}}>{a.category}</span>
@@ -131,8 +134,8 @@ function Detail({account:a,onBack,decisions,setDecisions}){
     </div>
     <div style={{fontSize:11,color:S.mu,marginBottom:18}}>{a.industry} · {a.tier} · ${a.arr.toLocaleString()} ARR</div>
     <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:18}}>
-      {[["Usage",`${a.usageTrend>0?"+":""}${a.usageTrend}%`,a.usageTrend<0?S.ri:S.op],["Renewal",`${a.daysUntilRenewal}d`,a.daysUntilRenewal<=30?S.ri:S.mu],["Last Touch",`${a.daysSinceLastTouch}d`,a.daysSinceLastTouch>60?S.ri:S.mu],["NPS",`${a.npsScore}/10`,a.npsScore>=8?S.op:a.npsScore<=4?S.ri:S.ur],["Tickets",a.openTickets,a.openTickets>=2?S.ri:S.mu],["Touches",a.totalTouchpoints,a.totalTouchpoints<=1?S.ri:S.mu]].map(([l,v,c])=>
-        <div key={l} style={{background:S.sf,border:`1px solid ${S.bd}`,borderRadius:7,padding:"10px 14px",flex:"1 1 100px",minWidth:100}}>
+      {[["Usage",`${a.usageTrend>0?"+":""}${a.usageTrend}%`,a.usageTrend<0?S.ri:S.op,"Product usage change (30d)"],["Renewal",`${a.daysUntilRenewal}d`,a.daysUntilRenewal<=30?S.ri:S.mu,"Days until contract renewal"],["Last Touch",`${a.daysSinceLastTouch}d`,a.daysSinceLastTouch>60?S.ri:S.mu,"Days since last CSM contact"],["NPS",`${a.npsScore}/10`,a.npsScore>=8?S.op:a.npsScore<=4?S.ri:S.ur,"Net Promoter Score (last survey)"],["Tickets",a.openTickets,a.openTickets>=2?S.ri:S.mu,"Open support tickets"],["Touches (90d)",a.totalTouchpoints,a.totalTouchpoints<=1?S.ri:S.mu,"Total CSM touchpoints (90d)"]].map(([l,v,c,tip])=>
+        <div key={l} title={tip} style={{background:S.sf,border:`1px solid ${S.bd}`,borderRadius:7,padding:"10px 14px",flex:"1 1 100px",minWidth:100}}>
           <div style={{fontSize:9,color:S.mu,textTransform:"uppercase",letterSpacing:".06em",marginBottom:3}}>{l}</div>
           <div style={{fontSize:18,fontWeight:700,color:c,fontFamily:"monospace"}}>{v}</div>
         </div>)}
@@ -151,7 +154,8 @@ function Detail({account:a,onBack,decisions,setDecisions}){
     {dg&&<div style={{background:S.ri+"08",border:`1px solid ${S.ri}28`,borderRadius:7,padding:16,marginBottom:12}}>
       <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:8}}><span>🛑</span><span style={{fontSize:9,fontWeight:700,color:S.ri,textTransform:"uppercase"}}>Decision Required — AI Cannot Proceed</span></div>
       <div style={{fontSize:13,fontWeight:600,color:S.tx,marginBottom:5}}>{dg.decision}</div>
-      <div style={{fontSize:11,color:S.so,marginBottom:12,fontStyle:"italic"}}>Why human: {dg.whyHuman}</div>
+      <div style={{fontSize:11,color:S.so,marginBottom:6,fontStyle:"italic"}}>Why human: {dg.whyHuman}</div>
+      {dg.context&&<div style={{fontSize:11,color:S.mu,marginBottom:12}}>{dg.context}</div>}
       <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
         {dg.options.map((o,i)=><button key={i} onClick={()=>setDec(o)} style={{padding:"8px 14px",borderRadius:5,fontSize:11,fontWeight:600,cursor:"pointer",background:dec===o?S.ac:"transparent",border:`1px solid ${dec===o?S.ac:S.bd}`,color:dec===o?S.wh:S.so}}>{o}</button>)}</div>
       {dec&&<div style={{marginTop:10,padding:8,background:S.op+"18",border:`1px solid ${S.op}38`,borderRadius:5,fontSize:11,color:S.op,fontWeight:600}}>Decision recorded: {dec}</div>}</div>}
@@ -256,7 +260,7 @@ function CriteriaPage({criteria,setCriteria,onBack,scored,outcomes}){
 }
 
 const LOAD_MSGS=["Connecting to Salesforce CRM...","Ingesting 847 CRM notes...","Connecting to Zendesk Support...","Processing 234 support transcripts...","Connecting to Gmail...","Reading 156 recent email threads...","Running AI analysis across all accounts...","Detecting cross-account patterns...","Generating priority rankings..."];
-function Welcome({onRun,onStart,criteria}){
+function Welcome({onRun,onStart,criteria,atRiskCount}){
   const[running,setRunning]=useState(false);
   const[msgIdx,setMsgIdx]=useState(0);
   useEffect(()=>{if(!running)return;const iv=setInterval(()=>setMsgIdx(i=>i<LOAD_MSGS.length-1?i+1:i),400);return()=>clearInterval(iv);},[running]);
@@ -266,11 +270,11 @@ function Welcome({onRun,onStart,criteria}){
       <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,marginBottom:32}}>
         <div style={{width:10,height:10,borderRadius:"50%",background:S.ac,boxShadow:`0 0 20px ${S.ac}`}}/>
         <span style={{fontSize:24,fontWeight:700,color:S.tx}}>BookSense</span></div>
-      <h1 style={{fontSize:28,fontWeight:700,color:S.tx,marginBottom:8}}>Good morning, Gurveen</h1>
-      <p style={{fontSize:14,color:S.mu,marginBottom:6}}>{today}</p>
-      <div style={{marginBottom:6}}><span style={{background:"rgba(124,92,252,0.15)",color:"#b8a5ff",padding:"5px 14px",borderRadius:5,fontSize:13,fontWeight:600,letterSpacing:".02em"}}>{strategyBadge(criteria)}</span></div>
-      <div style={{fontSize:12,color:S.ri,marginBottom:10}}>$485k ARR needs action this week</div>
-      <p style={{fontSize:14,color:S.so,marginBottom:36}}><span style={{color:S.tx,fontWeight:600}}>3 accounts</span> need attention before Friday.</p>
+      <h1 style={{fontSize:28,fontWeight:700,color:S.tx,marginBottom:12}}>Good morning, Gurveen</h1>
+      <p style={{fontSize:14,color:S.mu,marginBottom:14}}>{today}</p>
+      <div style={{marginBottom:14}}><span style={{background:"rgba(124,92,252,0.15)",color:"#b8a5ff",padding:"5px 14px",borderRadius:5,fontSize:13,fontWeight:600,letterSpacing:".02em"}}>{strategyBadge(criteria)}</span></div>
+      <p style={{fontSize:14,color:S.ri,fontWeight:600,marginBottom:8}}><span style={{color:S.tx}}>{atRiskCount}</span> accounts need attention before Friday.</p>
+      <div style={{fontSize:12,color:S.dm,marginBottom:32}}>$485k ARR needs action this week</div>
       {!running?<button onClick={()=>{setRunning(true);if(onStart)onStart();setTimeout(onRun,4000);}} style={{padding:"14px 36px",borderRadius:8,border:"none",cursor:"pointer",background:`linear-gradient(135deg,${S.ac},#6344e0)`,color:S.wh,fontSize:15,fontWeight:700,boxShadow:`0 4px 24px ${S.ac}59`}}>Run Prioritization</button>
       :<div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:12}}>
         <div style={{display:"flex",gap:5}}>{[0,1,2,3,4].map(i=><div key={i} style={{width:8,height:8,borderRadius:"50%",background:S.ac,animation:`bp 1.4s ease ${i*.12}s infinite`}}/>)}</div>
@@ -331,7 +335,7 @@ export default function BookSense(){
   const zt=scored.filter(a=>a.totalTouchpoints===0).length;
   const dark=scored.filter(a=>a.daysSinceLastTouch>60).length;
 
-  if(phase==="welcome")return<><style>{`*{box-sizing:border-box;margin:0}@keyframes bp{0%,100%{opacity:.2}50%{opacity:1}}@keyframes fadeMsg{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}`}</style><Welcome criteria={criteria} onRun={()=>setPhase("app")} onStart={()=>{portfolioAnalysis().then(r=>{if(r)setPortfolioAI(r);});}}/></>;
+  if(phase==="welcome")return<><style>{`*{box-sizing:border-box;margin:0}@keyframes bp{0%,100%{opacity:.2}50%{opacity:1}}@keyframes fadeMsg{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}`}</style><Welcome criteria={criteria} atRiskCount={scored.filter(x=>x.riskLevel==="critical").length} onRun={()=>setPhase("app")} onStart={()=>{portfolioAnalysis().then(r=>{if(r)setPortfolioAI(r);});}}/></>;
 
   return(<div style={{minHeight:"100vh",background:S.bg,color:S.tx,fontFamily:"-apple-system,'Segoe UI',sans-serif"}}>
     <style>{`*{box-sizing:border-box;margin:0}@keyframes bp{0%,100%{opacity:.2}50%{opacity:1}}@keyframes fi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:${S.bd};border-radius:3px}`}</style>
@@ -358,7 +362,7 @@ export default function BookSense(){
         {(()=>{const riskArr=scored.filter(x=>x.category==="risk").reduce((s,x)=>s+x.arr,0);const crit=scored.filter(x=>x.riskLevel==="critical");const topThreat=crit[0];return<div style={{display:"flex",flexDirection:"column",gap:5}}>
           <div style={{fontSize:12,color:S.tx,lineHeight:1.5}}>• <strong style={{color:S.ri}}>${(riskArr/1000)|0}k ARR</strong> at risk across <strong>{crit.length}</strong> critical accounts</div>
           {topThreat&&<div style={{fontSize:12,color:S.tx,lineHeight:1.5}}>• Top threat: <strong>{topThreat.name}</strong> (${(topThreat.arr/1000)|0}k) — usage {topThreat.usageTrend>0?"+":""}{topThreat.usageTrend}%, renewal in <strong style={{color:S.ri}}>{topThreat.daysUntilRenewal}d</strong></div>}
-          {cherry.detected&&<div style={{fontSize:12,color:S.tx,lineHeight:1.5}}>• Cherry-picking detected: low-value accounts over-serviced while <strong style={{color:S.ur}}>$322k Enterprise</strong> neglected</div>}
+          <div style={{fontSize:12,color:S.tx,lineHeight:1.5}}>• Priority: redirect to critical accounts this week</div>
         </div>;})()}</div>
       <div style={{fontSize:9,color:S.dm,marginBottom:12,marginTop:-8}}>🗄 Data sources: Salesforce CRM · Zendesk Support · Gmail</div>
       {portfolioAI?.cross_account_patterns?.length>0&&<div style={{background:S.sf,border:`1px solid ${S.bd}`,borderRadius:7,padding:14,marginBottom:18}}>
@@ -371,11 +375,11 @@ export default function BookSense(){
       <p style={{fontSize:11,color:S.mu,margin:"0 0 12px"}}>Click any row for deep briefing. Mark contacted ✓ or skipped ✗.</p>
       <div style={{display:"flex",gap:5,marginBottom:12,alignItems:"center",flexWrap:"wrap"}}>
         <input placeholder="Search..." value={search} onChange={e=>setSearch(e.target.value)} style={{padding:"5px 10px",borderRadius:5,border:`1px solid ${S.bd}`,background:S.sf,color:S.tx,fontSize:11,width:140,outline:"none"}}/>
-        {[{k:"all",l:`All (${scored.length})`},{k:"risk",l:`Risk (${counts.risk})`,c:S.ri},{k:"opportunity",l:`Opp (${counts.opportunity})`,c:S.op},{k:"urgency",l:`Urgent (${counts.urgency})`,c:S.ur}].map(f=>
+        {[{k:"all",l:`All (${scored.length})`},{k:"urgency",l:`Urgent (${counts.urgency})`,c:S.ur},{k:"risk",l:`Risk (${counts.risk})`,c:S.ri},{k:"opportunity",l:`Opp (${counts.opportunity})`,c:S.op}].map(f=>
           <button key={f.k} onClick={()=>setFilter(f.k)} style={{padding:"4px 9px",borderRadius:4,fontSize:10,fontWeight:600,cursor:"pointer",background:filter===f.k?(f.c||S.ac)+"18":"transparent",border:`1px solid ${filter===f.k?(f.c||S.ac):S.bd}`,color:filter===f.k?(f.c||S.as):S.mu}}>{f.l}</button>)}</div>
       <div style={{display:"grid",gridTemplateColumns:"32px 1.5fr 62px 48px 48px 58px 52px 1fr 60px",padding:"5px 12px",borderBottom:`1px solid ${S.bd}44`,gap:5}}>
-        {["#","Account","ARR","Usage","Renew","Signal","Risk","Action","Status"].map(h=>
-          <div key={h} style={{fontSize:8,fontWeight:700,color:S.dm,textTransform:"uppercase",letterSpacing:".08em"}}>{h}</div>)}</div>
+        {[["#"],["Account"],["ARR"],["Usage","Change in product usage (30d)"],["Renew","Days until renewal"],["Signal","Primary risk or opportunity signal"],["Risk","AI-assessed risk level"],["Action","AI-recommended next step"],["Status"]].map(([h,tip])=>
+          <div key={h} title={tip||""} style={{fontSize:8,fontWeight:700,color:S.dm,textTransform:"uppercase",letterSpacing:".08em",cursor:tip?"help":"default"}}>{h}</div>)}</div>
       {filtered.map((a,idx)=>{const st=actions[a.id];return(
         <div key={a.id} style={{display:"grid",gridTemplateColumns:"32px 1.5fr 62px 48px 48px 58px 52px 1fr 60px",padding:"9px 12px",borderBottom:`1px solid ${S.bd}`,cursor:"pointer",gap:5,alignItems:"center",animation:`fi 0.2s ease ${idx*.02}s both`,opacity:st==="skipped"?0.35:1,background:st==="contacted"?S.op+"0a":"transparent"}}
           onMouseEnter={e=>{if(!st)e.currentTarget.style.background=S.ra}} onMouseLeave={e=>{e.currentTarget.style.background=st==="contacted"?S.op+"0a":"transparent"}}>
