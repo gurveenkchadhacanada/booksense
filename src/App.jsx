@@ -241,7 +241,7 @@ function CriteriaPage({criteria,setCriteria,onBack}){
           <div style={{fontSize:11,fontWeight:700,color:i===0?S.as:S.mu,fontFamily:"monospace",width:20}}>#{i+1}</div>
           <div style={{flex:1}}><div style={{fontSize:13,fontWeight:600,color:S.tx}}>{c.label}</div></div>
         </div>)}</div>
-    <p style={{fontSize:11,color:S.dm,lineHeight:1.7,marginTop:20}}>You set the priorities. The AI interprets them alongside real-time signals, behavioral patterns, and cross-account context to generate daily recommendations. This is strategic input, not a formula.</p>
+    <p style={{fontSize:11,color:"#a8a29e",lineHeight:1.7,marginTop:20}}>You set the priorities. The AI interprets them alongside real-time signals, behavioral patterns, and cross-account context to generate daily recommendations. This is strategic input, not a formula.</p>
   </div>);
 }
 
@@ -311,7 +311,8 @@ export default function BookSense(){
   const reasonMap=portfolioAI?.rankings?Object.fromEntries(portfolioAI.rankings.map(r=>[r.id,r.reasoning])):null;
   const filtered=scored.filter(a=>(filter==="all"||a.category===filter)&&(!search||a.name.toLowerCase().includes(search.toLowerCase())||a.industry.toLowerCase().includes(search.toLowerCase())));
   const hasOutcomes=Object.keys(outcomes).length>0;
-  if(rankMap&&!hasOutcomes)filtered.sort((a,b)=>(rankMap[a.id]??999)-(rankMap[b.id]??999));
+  const criteriaReordered=criteria.some((c,i)=>c.id!==CRITERIA[i].id);
+  if(rankMap&&!hasOutcomes&&!criteriaReordered)filtered.sort((a,b)=>(rankMap[a.id]??999)-(rankMap[b.id]??999));
   const counts={risk:0,opportunity:0,urgency:0};scored.forEach(a=>{if(counts[a.category]!==undefined)counts[a.category]++;});
   const totalARR=scored.reduce((s,a)=>s+a.arr,0);
   const zt=scored.filter(a=>a.totalTouchpoints===0).length;
@@ -350,7 +351,7 @@ export default function BookSense(){
       <h2 style={{fontSize:19,fontWeight:700,marginBottom:3}}>Daily Action Board</h2>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
         <p style={{fontSize:11,color:S.mu,margin:0}}>Click any row for deep briefing. Mark contacted ✓ or skipped ✗.</p>
-        <span style={{fontSize:9,fontWeight:600,color:rankMap&&!hasOutcomes?S.as:S.dm}}>{rankMap&&!hasOutcomes?"🧠 Ranked by AI":hasOutcomes?"📊 Re-ranked by outcomes":"📊 Ranked by rules engine"}</span></div>
+        <span style={{fontSize:9,fontWeight:600,color:rankMap&&!hasOutcomes&&!criteriaReordered?S.as:S.dm}}>{rankMap&&!hasOutcomes&&!criteriaReordered?"🧠 Ranked by AI":criteriaReordered?"📊 Re-ranked by strategy":hasOutcomes?"📊 Re-ranked by outcomes":"📊 Ranked by rules engine"}</span></div>
       <div style={{display:"flex",gap:5,marginBottom:12,alignItems:"center",flexWrap:"wrap"}}>
         <input placeholder="Search..." value={search} onChange={e=>setSearch(e.target.value)} style={{padding:"5px 10px",borderRadius:5,border:`1px solid ${S.bd}`,background:S.sf,color:S.tx,fontSize:11,width:140,outline:"none"}}/>
         {[{k:"all",l:`All (${scored.length})`},{k:"risk",l:`Risk (${counts.risk})`,c:S.ri},{k:"opportunity",l:`Opp (${counts.opportunity})`,c:S.op},{k:"urgency",l:`Urgent (${counts.urgency})`,c:S.ur}].map(f=>
