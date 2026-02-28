@@ -333,7 +333,7 @@ export default function BookSense(){
         <div style={{width:6,height:6,borderRadius:"50%",background:S.ac,boxShadow:`0 0 8px ${S.ac}`}}/>
         <span style={{fontSize:14,fontWeight:700}}>BookSense</span></div>
       <div style={{display:"flex",gap:2}}>
-        {[{k:"board",l:"Action Board"},{k:"manager",l:"Manager"},{k:"criteria",l:"⚙ AI Strategy"}].map(t=>
+        {[{k:"board",l:"Action Board"},{k:"manager",l:"Manager"},{k:"criteria",l:"⚙ Q1 Strategy"}].map(t=>
           <button key={t.k} onClick={()=>{setView(t.k);setSelected(null);}} style={{padding:"5px 12px",borderRadius:5,border:"none",cursor:"pointer",fontSize:10,fontWeight:600,background:view===t.k?S.ac:"transparent",color:view===t.k?S.wh:S.mu}}>{t.l}</button>)}</div></div>
     {view==="detail"&&selected?<Detail account={selected} onBack={()=>setView("board")}/>
     :view==="manager"?<Manager scored={scored} cherry={cherry} gaps={gaps} actions={actions} outcomes={outcomes} portfolioAI={portfolioAI}/>
