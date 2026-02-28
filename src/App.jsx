@@ -247,8 +247,11 @@ function CriteriaPage({criteria,setCriteria,onBack}){
   </div>);
 }
 
+const LOAD_MSGS=["Connecting to Salesforce CRM...","Ingesting 847 CRM notes...","Connecting to Zendesk Support...","Processing 234 support transcripts...","Connecting to Gmail...","Reading 156 recent email threads...","Running AI analysis across all accounts...","Detecting cross-account patterns...","Generating priority rankings..."];
 function Welcome({onRun,onStart}){
   const[running,setRunning]=useState(false);
+  const[msgIdx,setMsgIdx]=useState(0);
+  useEffect(()=>{if(!running)return;const iv=setInterval(()=>setMsgIdx(i=>i<LOAD_MSGS.length-1?i+1:i),400);return()=>clearInterval(iv);},[running]);
   const today=new Date().toLocaleDateString("en-US",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
   return(<div style={{minHeight:"100vh",background:S.bg,display:"flex",alignItems:"center",justifyContent:"center"}}>
     <div style={{textAlign:"center",maxWidth:460}}>
@@ -258,10 +261,10 @@ function Welcome({onRun,onStart}){
       <h1 style={{fontSize:28,fontWeight:700,color:S.tx,marginBottom:8}}>Good morning, Gurveen</h1>
       <p style={{fontSize:14,color:S.mu,marginBottom:6}}>{today}</p>
       <p style={{fontSize:14,color:S.so,marginBottom:36}}><span style={{color:S.tx,fontWeight:600}}>20 accounts</span> ready for AI prioritization.</p>
-      {!running?<button onClick={()=>{setRunning(true);if(onStart)onStart();setTimeout(onRun,1800);}} style={{padding:"14px 36px",borderRadius:8,border:"none",cursor:"pointer",background:`linear-gradient(135deg,${S.ac},#6344e0)`,color:S.wh,fontSize:15,fontWeight:700,boxShadow:`0 4px 24px ${S.ac}59`}}>Run Prioritization</button>
+      {!running?<button onClick={()=>{setRunning(true);if(onStart)onStart();setTimeout(onRun,4000);}} style={{padding:"14px 36px",borderRadius:8,border:"none",cursor:"pointer",background:`linear-gradient(135deg,${S.ac},#6344e0)`,color:S.wh,fontSize:15,fontWeight:700,boxShadow:`0 4px 24px ${S.ac}59`}}>Run Prioritization</button>
       :<div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:12}}>
         <div style={{display:"flex",gap:5}}>{[0,1,2,3,4].map(i=><div key={i} style={{width:8,height:8,borderRadius:"50%",background:S.ac,animation:`bp 1.4s ease ${i*.12}s infinite`}}/>)}</div>
-        <div style={{fontSize:13,color:S.so}}>Analyzing all accounts...</div></div>}
+        <div key={msgIdx} style={{fontSize:12,color:S.so,animation:"fadeMsg 0.3s ease"}}>{LOAD_MSGS[msgIdx]}</div></div>}
     </div></div>);
 }
 
@@ -307,7 +310,7 @@ export default function BookSense(){
   const zt=scored.filter(a=>a.totalTouchpoints===0).length;
   const dark=scored.filter(a=>a.daysSinceLastTouch>60).length;
 
-  if(phase==="welcome")return<><style>{`*{box-sizing:border-box;margin:0}@keyframes bp{0%,100%{opacity:.2}50%{opacity:1}}`}</style><Welcome onRun={()=>setPhase("app")} onStart={()=>{portfolioAnalysis().then(r=>{if(r)setPortfolioAI(r);});}}/></>;
+  if(phase==="welcome")return<><style>{`*{box-sizing:border-box;margin:0}@keyframes bp{0%,100%{opacity:.2}50%{opacity:1}}@keyframes fadeMsg{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}`}</style><Welcome onRun={()=>setPhase("app")} onStart={()=>{portfolioAnalysis().then(r=>{if(r)setPortfolioAI(r);});}}/></>;
 
   return(<div style={{minHeight:"100vh",background:S.bg,color:S.tx,fontFamily:"-apple-system,'Segoe UI',sans-serif"}}>
     <style>{`*{box-sizing:border-box;margin:0}@keyframes bp{0%,100%{opacity:.2}50%{opacity:1}}@keyframes fi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:${S.bd};border-radius:3px}`}</style>
