@@ -116,13 +116,14 @@ function Detail({account:a,onBack,decisions,setDecisions}){
   useEffect(()=>{setLoading(true);setAi(null);setReveal(false);const t=setTimeout(()=>setReveal(true),2000);aiDeepDive(a).then(r=>{setAi(r);setLoading(false);});return()=>clearTimeout(t);},[a.id]);
   const dg=a.decisionGate;
   if(!reveal)return(<div style={{padding:20}}>
-    <button onClick={onBack} style={{background:"none",border:"none",color:S.as,cursor:"pointer",fontSize:12,marginBottom:14,padding:0}}>← Back</button>
     <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:400,gap:14}}>
       <div style={{display:"flex",gap:5}}>{[0,1,2,3,4].map(i=><div key={i} style={{width:8,height:8,borderRadius:"50%",background:S.ac,animation:`bp 1.4s ease ${i*.12}s infinite`}}/>)}</div>
       <div style={{fontSize:13,color:S.so}}>Analyzing account signals...</div>
       <div style={{fontSize:10,color:S.dm}}>Cross-referencing CRM, support, and email data</div></div></div>);
+  const CRIT_SIGNALS=/renewal|usage crash|champion depart|migration|export|competitive threat/i;
+  const WARN_SIGNALS=/nps|ticket|touch/i;
+  const sigColor=(r)=>CRIT_SIGNALS.test(r)?S.ri:WARN_SIGNALS.test(r)?S.ur:S.dm;
   return(<div style={{padding:20}}>
-    <button onClick={onBack} style={{background:"none",border:"none",color:S.as,cursor:"pointer",fontSize:12,marginBottom:14,padding:0}}>← Back</button>
     <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap",marginBottom:4}}>
       <h2 style={{fontSize:20,fontWeight:700,color:S.tx,margin:0}}>{a.name}</h2>
       <span style={{background:cc[a.category]+"18",color:cc[a.category],border:`1px solid ${cc[a.category]}44`,padding:"2px 7px",borderRadius:4,fontSize:9,fontWeight:700,textTransform:"uppercase"}}>{a.category}</span>
@@ -172,9 +173,9 @@ function Detail({account:a,onBack,decisions,setDecisions}){
           <div style={{fontSize:8,fontWeight:700,color:S.mu,textTransform:"uppercase",letterSpacing:".06em",marginBottom:3}}>Recent Email</div>
           <div style={{fontSize:10,color:S.so,lineHeight:1.5}}>{a.recentEmail}</div></div>}
       </div>}</div>}
-    <div style={{background:S.sf,border:`1px solid ${S.bd}`,borderRadius:7,padding:16}}>
+    {a.reasons.length>=3&&<div style={{background:S.sf,border:`1px solid ${S.bd}`,borderRadius:7,padding:16}}>
       <div style={{fontSize:9,fontWeight:700,color:S.mu,textTransform:"uppercase",marginBottom:8}}>Signals ({a.reasons.length})</div>
-      {a.reasons.map((r,i)=><div key={i} style={{fontSize:11,color:S.tx,padding:"6px 9px",background:S.bg,borderRadius:4,borderLeft:`3px solid ${cc[a.category]}`,marginBottom:3}}>{r}</div>)}</div>
+      {a.reasons.map((r,i)=><div key={i} style={{fontSize:11,color:S.tx,padding:"6px 9px",background:S.bg,borderRadius:4,borderLeft:`3px solid ${sigColor(r)}`,marginBottom:3}}>{r}</div>)}</div>}
   </div>);
 }
 
@@ -226,8 +227,16 @@ function Manager({scored,cherry,gaps,actions,outcomes,portfolioAI}){
 }
 
 const CRITERIA_TIPS={churn:"Likelihood of account cancellation based on usage, engagement, and sentiment signals.",renewal:"How close the renewal date is and whether the account is engaged enough to renew.",expansion:"Signals that an account is ready to upgrade, add products, or increase spend.",engagement:"Gaps in touchpoints, response times, and proactive outreach relative to account value.",arrValue:"Weighting by contract size so higher-value accounts surface first.",supportHealth:"Open ticket volume, resolution times, and escalation patterns."};
-function CriteriaPage({criteria,setCriteria,onBack}){
+function CriteriaPage({criteria,setCriteria,onBack,scored,outcomes}){
   const di=useRef(null),dv=useRef(null);
+  const[preview,setPreview]=useState(null);
+  const doReorder=()=>{
+    const l=[...criteria];const d=l.splice(di.current,1)[0];l.splice(dv.current,0,d);
+    const oldTop3=scored.slice(0,3).map(a=>a.id);
+    const newScored=ACCOUNTS.map(a=>score(a,l,outcomes)).sort((a,b)=>b.score-a.score);
+    const movers=newScored.slice(0,3).filter(a=>!oldTop3.includes(a.id));
+    if(movers.length>0){const m=movers[0];const oldIdx=scored.findIndex(a=>a.id===m.id);const newIdx=newScored.findIndex(a=>a.id===m.id);setPreview(`This would move ${m.name} from #${oldIdx+1} → #${newIdx+1}`);setTimeout(()=>setPreview(null),3000);}
+    setCriteria(l);};
   return(<div style={{padding:20,maxWidth:460,margin:"0 auto"}}>
     <button onClick={onBack} style={{background:"none",border:"none",color:S.as,cursor:"pointer",fontSize:12,marginBottom:14,padding:0}}>← Back</button>
     <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:4}}>
@@ -237,13 +246,14 @@ function CriteriaPage({criteria,setCriteria,onBack}){
     <div style={{display:"flex",flexDirection:"column",gap:6}}>
       {criteria.map((c,i)=>
         <div key={c.id} draggable onDragStart={()=>di.current=i} onDragEnter={()=>dv.current=i} onDragOver={e=>e.preventDefault()}
-          onDragEnd={()=>{const l=[...criteria];const d=l.splice(di.current,1)[0];l.splice(dv.current,0,d);setCriteria(l);}}
+          onDragEnd={doReorder}
           title={CRITERIA_TIPS[c.id]||""}
           style={{background:S.sf,border:`1px solid ${S.bd}`,borderRadius:8,padding:"14px 16px",cursor:"grab",display:"flex",alignItems:"center",gap:14}}>
           <div style={{fontSize:14,color:S.dm}}>⠿</div>
           <div style={{fontSize:11,fontWeight:700,color:i===0?S.as:S.mu,fontFamily:"monospace",width:20}}>#{i+1}</div>
           <div style={{flex:1}}><div style={{fontSize:13,fontWeight:600,color:S.tx}}>{c.label}</div></div>
         </div>)}</div>
+    {preview&&<div style={{marginTop:10,fontSize:11,color:S.ac,fontStyle:"italic"}}>{preview}</div>}
     <p style={{fontSize:11,color:"#a8a29e",lineHeight:1.7,marginTop:20}}>You set the priorities. The AI interprets them alongside real-time signals, behavioral patterns, and cross-account context to generate daily recommendations. This is strategic input, not a formula.</p>
   </div>);
 }
@@ -261,8 +271,9 @@ function Welcome({onRun,onStart,criteria}){
         <span style={{fontSize:24,fontWeight:700,color:S.tx}}>BookSense</span></div>
       <h1 style={{fontSize:28,fontWeight:700,color:S.tx,marginBottom:8}}>Good morning, Gurveen</h1>
       <p style={{fontSize:14,color:S.mu,marginBottom:6}}>{today}</p>
-      <div style={{marginBottom:10}}><span style={{background:"rgba(124,92,252,0.15)",color:"#b8a5ff",padding:"5px 14px",borderRadius:5,fontSize:13,fontWeight:600,letterSpacing:".02em"}}>{strategyBadge(criteria)}</span></div>
-      <p style={{fontSize:14,color:S.so,marginBottom:36}}><span style={{color:S.tx,fontWeight:600}}>20 accounts</span> ready for AI prioritization.</p>
+      <div style={{marginBottom:6}}><span style={{background:"rgba(124,92,252,0.15)",color:"#b8a5ff",padding:"5px 14px",borderRadius:5,fontSize:13,fontWeight:600,letterSpacing:".02em"}}>{strategyBadge(criteria)}</span></div>
+      <div style={{fontSize:12,color:S.ri,marginBottom:10}}>$485k ARR needs action this week</div>
+      <p style={{fontSize:14,color:S.so,marginBottom:36}}><span style={{color:S.tx,fontWeight:600}}>3 accounts</span> need attention before Friday.</p>
       {!running?<button onClick={()=>{setRunning(true);if(onStart)onStart();setTimeout(onRun,4000);}} style={{padding:"14px 36px",borderRadius:8,border:"none",cursor:"pointer",background:`linear-gradient(135deg,${S.ac},#6344e0)`,color:S.wh,fontSize:15,fontWeight:700,boxShadow:`0 4px 24px ${S.ac}59`}}>Run Prioritization</button>
       :<div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:12}}>
         <div style={{display:"flex",gap:5}}>{[0,1,2,3,4].map(i=><div key={i} style={{width:8,height:8,borderRadius:"50%",background:S.ac,animation:`bp 1.4s ease ${i*.12}s infinite`}}/>)}</div>
@@ -336,27 +347,30 @@ export default function BookSense(){
           <button key={t.k} onClick={()=>{setView(t.k);setSelected(null);}} style={{padding:"5px 12px",borderRadius:5,border:"none",cursor:"pointer",fontSize:10,fontWeight:600,background:view===t.k?S.ac:"transparent",color:view===t.k?S.wh:S.mu}}>{t.l}</button>)}</div></div>
     {view==="detail"&&selected?<Detail account={selected} onBack={()=>setView("board")} decisions={decisions} setDecisions={setDecisions}/>
     :view==="manager"?<Manager scored={scored} cherry={cherry} gaps={gaps} actions={actions} outcomes={outcomes} portfolioAI={portfolioAI}/>
-    :view==="criteria"?<CriteriaPage criteria={criteria} setCriteria={setCriteria} onBack={()=>setView("board")}/>
+    :view==="criteria"?<CriteriaPage criteria={criteria} setCriteria={setCriteria} onBack={()=>setView("board")} scored={scored} outcomes={outcomes}/>
     :<div style={{padding:"18px 24px"}}>
       <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap"}}>
-        {[["Book ARR",`$${(totalARR/1e6).toFixed(1)}M`],["Accounts",scored.length],["Zero-Touch",zt,zt?S.ri:S.op],["Gone Dark",dark,dark?S.ur:S.op]].map(([l,v,c])=>
+        {[["Book ARR",`$${(totalARR/1e6).toFixed(1)}M`],["At Risk",scored.filter(x=>x.riskLevel==="critical").length,S.ri],["Zero-Touch",zt,zt?S.ri:S.op],["Gone Dark",dark,dark?S.ur:S.op]].map(([l,v,c])=>
           <div key={l} style={{background:S.sf,border:`1px solid ${S.bd}`,borderRadius:7,padding:"11px 14px",flex:"1 1 105px",minWidth:105}}>
             <div style={{fontSize:9,color:S.mu,textTransform:"uppercase",letterSpacing:".06em",marginBottom:3}}>{l}</div>
             <div style={{fontSize:19,fontWeight:700,color:c||S.tx,fontFamily:"monospace"}}>{v}</div></div>)}</div>
       <div style={{background:S.ac+"0d",border:`1px solid ${S.ac}28`,borderRadius:7,padding:14,marginBottom:12}}>
-        <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6}}>
+        <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:8}}>
           <span style={{fontSize:11}}>🤖</span><span style={{fontSize:9,fontWeight:700,color:S.as,textTransform:"uppercase"}}>Portfolio Assessment</span></div>
-        <p style={{fontSize:12,lineHeight:1.7,color:S.tx,margin:0}}>{portfolioAI?.portfolio_summary||summary}</p></div>
+        {(()=>{const riskArr=scored.filter(x=>x.category==="risk").reduce((s,x)=>s+x.arr,0);const crit=scored.filter(x=>x.riskLevel==="critical");const topThreat=crit[0];return<div style={{display:"flex",flexDirection:"column",gap:5}}>
+          <div style={{fontSize:12,color:S.tx,lineHeight:1.5}}>• <strong style={{color:S.ri}}>${(riskArr/1000)|0}k ARR</strong> at risk across <strong>{crit.length}</strong> critical accounts</div>
+          {topThreat&&<div style={{fontSize:12,color:S.tx,lineHeight:1.5}}>• Top threat: <strong>{topThreat.name}</strong> (${(topThreat.arr/1000)|0}k) — usage {topThreat.usageTrend>0?"+":""}{topThreat.usageTrend}%, renewal in <strong style={{color:S.ri}}>{topThreat.daysUntilRenewal}d</strong></div>}
+          {cherry.detected&&<div style={{fontSize:12,color:S.tx,lineHeight:1.5}}>• Cherry-picking detected: low-value accounts over-serviced while <strong style={{color:S.ur}}>$322k Enterprise</strong> neglected</div>}
+        </div>;})()}</div>
       <div style={{fontSize:9,color:S.dm,marginBottom:12,marginTop:-8}}>🗄 Data sources: Salesforce CRM · Zendesk Support · Gmail</div>
       {portfolioAI?.cross_account_patterns?.length>0&&<div style={{background:S.sf,border:`1px solid ${S.bd}`,borderRadius:7,padding:14,marginBottom:18}}>
         <div onClick={()=>setPatternsOpen(p=>!p)} style={{display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer"}}>
           <div style={{fontSize:9,fontWeight:700,color:S.mu,textTransform:"uppercase",letterSpacing:".06em"}}>{portfolioAI.cross_account_patterns.length} cross-account patterns detected</div>
           <span style={{fontSize:10,color:S.dm}}>{patternsOpen?"▾":"▸"}</span></div>
         {patternsOpen&&<div style={{marginTop:8}}>{portfolioAI.cross_account_patterns.map((p,i)=><div key={i} style={{fontSize:11,color:S.so,padding:"6px 9px",background:S.bg,borderRadius:4,borderLeft:`3px solid ${S.ac}`,marginBottom:3,lineHeight:1.5}}>{p}</div>)}</div>}</div>}
+      <div style={{background:S.ur+"12",border:`1px solid ${S.ur}30`,borderRadius:6,padding:"8px 12px",marginBottom:12,fontSize:11,color:S.ur,lineHeight:1.5}}>⚠ Diana Chen (Meridian) and Patricia Hernandez (Ironclad) are LinkedIn connections — both $195k+ accounts in crisis simultaneously, signaling word-of-mouth churn risk.</div>
       <h2 style={{fontSize:19,fontWeight:700,marginBottom:3}}>Daily Action Board</h2>
-      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
-        <p style={{fontSize:11,color:S.mu,margin:0}}>Click any row for deep briefing. Mark contacted ✓ or skipped ✗.</p>
-        <span style={{fontSize:9,fontWeight:600,color:rankMap&&!hasOutcomes&&!criteriaReordered?S.as:S.dm}}>{rankMap&&!hasOutcomes&&!criteriaReordered?"🧠 Ranked by AI":criteriaReordered?"📊 Re-ranked by strategy":hasOutcomes?"📊 Re-ranked by outcomes":"📊 Ranked by rules engine"}</span></div>
+      <p style={{fontSize:11,color:S.mu,margin:"0 0 12px"}}>Click any row for deep briefing. Mark contacted ✓ or skipped ✗.</p>
       <div style={{display:"flex",gap:5,marginBottom:12,alignItems:"center",flexWrap:"wrap"}}>
         <input placeholder="Search..." value={search} onChange={e=>setSearch(e.target.value)} style={{padding:"5px 10px",borderRadius:5,border:`1px solid ${S.bd}`,background:S.sf,color:S.tx,fontSize:11,width:140,outline:"none"}}/>
         {[{k:"all",l:`All (${scored.length})`},{k:"risk",l:`Risk (${counts.risk})`,c:S.ri},{k:"opportunity",l:`Opp (${counts.opportunity})`,c:S.op},{k:"urgency",l:`Urgent (${counts.urgency})`,c:S.ur}].map(f=>
@@ -384,11 +398,6 @@ export default function BookSense(){
             <button onClick={()=>setActions(p=>({...p,[a.id]:p[a.id]==="skipped"?undefined:"skipped"}))} style={{width:26,height:22,borderRadius:4,border:`1px solid ${st==="skipped"?S.ri:S.bd}`,cursor:"pointer",background:st==="skipped"?S.ri+"18":"transparent",color:st==="skipped"?S.ri:S.dm,fontSize:11,display:"flex",alignItems:"center",justifyContent:"center"}}>✗</button>
             {outcomes[a.id]&&<div style={{width:7,height:7,borderRadius:"50%",background:outcomes[a.id].rating==="positive"?S.op:outcomes[a.id].rating==="neutral"?S.ur:S.ri}}/>}</div>
         </div>);})}
-      <div style={{marginTop:20,padding:14,background:S.sf,border:`1px solid ${S.bd}`,borderRadius:7}}>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14}}>
-          <div><div style={{fontSize:8,fontWeight:700,color:S.as,textTransform:"uppercase",marginBottom:5}}>🤖 AI owns</div><div style={{fontSize:10,color:S.mu,lineHeight:1.6}}>Signal aggregation, priority scoring, cherry-picking detection, coverage gaps, per-account briefings, decision gate identification.</div></div>
-          <div><div style={{fontSize:8,fontWeight:700,color:S.op,textTransform:"uppercase",marginBottom:5}}>👤 Human can now</div><div style={{fontSize:10,color:S.mu,lineHeight:1.6}}>Manage 300 accounts with data-driven prioritization. Prep any call in 60s. Catch churn before it happens. Configure AI strategy per quarter.</div></div>
-          <div><div style={{fontSize:8,fontWeight:700,color:S.ri,textTransform:"uppercase",marginBottom:5}}>🛑 AI stops here</div><div style={{fontSize:10,color:S.mu,lineHeight:1.6}}>Discount decisions. Escalation. Churn save negotiation. Contract terms. Requires relationship context and resource authority.</div></div></div></div>
       <div style={{textAlign:"center",marginTop:18}}><button onClick={resetDemo} style={{background:"none",border:`1px solid ${S.bd}`,borderRadius:5,padding:"4px 12px",fontSize:9,color:S.dm,cursor:"pointer"}}>Reset Demo</button></div>
     </div>}
     {outcomeModal!==null&&(()=>{const ma=scored.find(x=>x.id===outcomeModal);return<div onClick={()=>setOutcomeModal(null)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.65)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:999}}>
