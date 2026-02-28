@@ -109,23 +109,24 @@ async function aiDeepDive(a){try{const r=await fetch("/api/chat",{method:"POST",
 
 async function portfolioAnalysis(){try{const d=ACCOUNTS.map(a=>`ID:${a.id}|${a.name}|${a.industry}|${a.tier}|$${a.arr}|Usage:${a.usageTrend}%|Touch:${a.daysSinceLastTouch}d|Renewal:${a.daysUntilRenewal}d|Tickets:${a.openTickets}|NPS:${a.npsScore}|Touchpoints:${a.totalTouchpoints}|Notes:${a.notes}|CRM:${a.crmNotes||""}|Support:${a.supportTranscript||""}|Email:${a.recentEmail||""}`).join("\n");const r=await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:4000,messages:[{role:"user",content:`Analyze this CSM portfolio of 20 accounts with their unstructured signals (CRM notes, support transcripts, recent emails). Consider all metrics AND the unstructured signals holistically when ranking.\n${d}\nReturn ONLY JSON:{"portfolio_summary":"<3-4 sentence narrative assessment of the entire portfolio — highlight key risks, opportunities, and overall health>","cross_account_patterns":["<identify connections between accounts — people who moved between companies, shared industries with contrasting outcomes, referral chains, competitive threats spanning multiple accounts>"],"cherry_picking_analysis":"<1-2 sentences about CSM behavioral patterns across the portfolio>","rankings":[{"id":<account ID number>,"reasoning":"<1 sentence explaining why this account is ranked at this priority position, referencing specific signals from CRM notes, support transcripts, or emails>"}]}\nThe rankings array must contain all 20 accounts ordered by priority — highest priority first. Use the unstructured signals to make nuanced ranking decisions that a rules engine would miss.`}]})});const j=await r.json();return JSON.parse((j.content?.[0]?.text||"").replace(/```json\s*/g,"").replace(/```/g,"").trim());}catch{return{portfolio_summary:"This $1.7M portfolio is in crisis mode with $485k ARR at immediate risk across three Enterprise accounts (Meridian, Apex, Ironclad) that share a pattern of neglect and imminent renewal deadlines. The CSM is systematically over-servicing three $10-12k Starter e-commerce accounts (31 combined touchpoints) while five accounts over $50k have just 8 touchpoints combined — a 10x resource allocation inversion. The bright spots are DataPulse ($85k, NPS 10, Series B) and Streamline Commerce ($15k, 45% usage surge) which represent immediate expansion revenue. Urgent action is needed this week on Meridian ($240k, 28-day renewal), Apex ($180k, 18-day renewal), and Ironclad ($195k, URGENT email threatening vendor evaluation).",cross_account_patterns:["Diana Chen (Meridian) and Patricia Hernandez (Ironclad) are LinkedIn connections — both accounts are in crisis simultaneously, suggesting word-of-mouth churn risk","Priya Sharma (SkillForge) referred two EdTech startups while Amy Zhao (DataPulse) offered a joint case study — these advocacy signals should be connected into a referral program","Carlos Mendez (TerraForm) single-threading risk mirrors Ledgerpoint's Sarah Mitchell dependency — both $150k+ accounts have one champion who could leave","Three Starter e-commerce accounts (ShopNest, CartFlow, SwiftCart) have 31 combined touchpoints while five accounts over $50k have 8 combined — resource allocation is inverted","Derek Woo (NovaPay) is publicly evaluating competitors on LinkedIn while Meridian's new CTO comes from a competitor — two accounts showing competitive threat signals in the same renewal window"],cherry_picking_analysis:"The CSM exhibits classic avoidance behavior — gravitating toward friendly, low-complexity Starter accounts (Jenny Park, Mike Torres, Rachel Kim) while systematically avoiding Manufacturing accounts and difficult conversations. The three over-serviced e-commerce accounts consume roughly 15 hours/month of CSM time that could cover the five most neglected accounts in the portfolio.",rankings:[{id:1,reasoning:"$240k Enterprise in active migration prep — new CTO from competitor background, 34% usage crash, two champions departed, renewal in 28 days with data export tickets signaling exit"},{id:7,reasoning:"$180k Enterprise renewal in 18 days with zero renewal conversation — new decision-maker unresponsive, $4,200 billing dispute blocking engagement"},{id:15,reasoning:"$195k Enterprise with URGENT email threatening vendor evaluation by Friday — three weeks of unanswered calls and two critical production tickets"},{id:8,reasoning:"$65k renewal in 22 days with CTO publicly benchmarking competitors on LinkedIn — API latency regression gives technical justification to switch"},{id:2,reasoning:"$75k Growth account abandoned during onboarding — zero touchpoints, 200 drivers waiting, ops lead losing internal credibility after championing us"},{id:16,reasoning:"$72k Manufacturing account on a manual workaround since December — promised fix never delivered, contact has gone silent after three weeks without reply"},{id:3,reasoning:"$52k Growth account with zero human engagement — only automated welcome email, legal firm high-churn risk when ignored"},{id:4,reasoning:"$15k Starter hitting plan limits with 45% usage growth — CEO actively requesting upgrade pricing, textbook expansion that closes itself"},{id:5,reasoning:"$85k Growth at NPS 10 with Series B doubling headcount — CEO offering case study and advisory board, immediate Premium Support and Custom Integrations expansion"},{id:17,reasoning:"$48k Growth with usage surging 20% but Mobile SDK crashes and dashboard timeouts blocking expansion into three new school districts"},{id:14,reasoning:"$68k Healthcare with flat usage, 90-day renewal, and contact who cannot articulate ROI to hospital board during budget review"},{id:12,reasoning:"$310k largest account single-threaded through one VP — SOC2 compliance needs create both renewal risk and Custom Integrations expansion opportunity"},{id:19,reasoning:"$150k best-in-class account — champion offering conference speaking and advisory board, fraud detection use case is a force-multiplier case study"},{id:6,reasoning:"$8k Starter with 3x average usage per seat — founder referred two companies and is asking about Analytics Add-on pricing"},{id:13,reasoning:"$55k Growth with dev team already architecting around our API — Salesforce integration interest opens Custom Integrations conversation"},{id:20,reasoning:"$18k Starter growing 15% but 60 days silent with GPS drift issue worsening — founder building route optimization himself reduces our upgrade leverage"},{id:18,reasoning:"$58k Growth with slight usage dip — contact says 'everything is fine' while admitting they have not been in the platform, classic silent disengagement"},{id:9,reasoning:"$12k Starter over-serviced with 12 touchpoints — friendly contact with zero strategic value, should transition to automated nurture"},{id:10,reasoning:"$10k Starter over-serviced with 10 touchpoints — CSM spending 45 minutes per call discussing sidebar colors and company swag"},{id:11,reasoning:"$11k Starter over-serviced with 9 touchpoints — third comfort account confirming systemic CSM avoidance of difficult accounts"}]};}}
 
-function Detail({account:a,onBack}){
-  const[ai,setAi]=useState(null);const[loading,setLoading]=useState(true);const[dec,setDec]=useState(null);const[reveal,setReveal]=useState(false);
-  useEffect(()=>{setLoading(true);setAi(null);setDec(null);setReveal(false);const t=setTimeout(()=>setReveal(true),1700);aiDeepDive(a).then(r=>{setAi(r);setLoading(false);});return()=>clearTimeout(t);},[a.id]);
+function Detail({account:a,onBack,decisions,setDecisions}){
+  const[ai,setAi]=useState(null);const[loading,setLoading]=useState(true);const[reveal,setReveal]=useState(false);const[evOpen,setEvOpen]=useState(false);
+  const dec=decisions[a.id]||null;
+  const setDec=(v)=>{const next={...decisions,[a.id]:v};setDecisions(next);localStorage.setItem("bs_decisions",JSON.stringify(next));};
+  useEffect(()=>{setLoading(true);setAi(null);setReveal(false);const t=setTimeout(()=>setReveal(true),2000);aiDeepDive(a).then(r=>{setAi(r);setLoading(false);});return()=>clearTimeout(t);},[a.id]);
   const dg=a.decisionGate;
-  if(!reveal)return(<div style={{padding:20,maxWidth:840}}>
+  if(!reveal)return(<div style={{padding:20}}>
     <button onClick={onBack} style={{background:"none",border:"none",color:S.as,cursor:"pointer",fontSize:12,marginBottom:14,padding:0}}>← Back</button>
-    <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:300,gap:14}}>
+    <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:400,gap:14}}>
       <div style={{display:"flex",gap:5}}>{[0,1,2,3,4].map(i=><div key={i} style={{width:8,height:8,borderRadius:"50%",background:S.ac,animation:`bp 1.4s ease ${i*.12}s infinite`}}/>)}</div>
-      <div style={{fontSize:12,color:S.so}}>Analyzing account signals...</div>
+      <div style={{fontSize:13,color:S.so}}>Analyzing account signals...</div>
       <div style={{fontSize:10,color:S.dm}}>Cross-referencing CRM, support, and email data</div></div></div>);
-  return(<div style={{padding:20,maxWidth:840}}>
+  return(<div style={{padding:20}}>
     <button onClick={onBack} style={{background:"none",border:"none",color:S.as,cursor:"pointer",fontSize:12,marginBottom:14,padding:0}}>← Back</button>
     <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap",marginBottom:4}}>
       <h2 style={{fontSize:20,fontWeight:700,color:S.tx,margin:0}}>{a.name}</h2>
       <span style={{background:cc[a.category]+"18",color:cc[a.category],border:`1px solid ${cc[a.category]}44`,padding:"2px 7px",borderRadius:4,fontSize:9,fontWeight:700,textTransform:"uppercase"}}>{a.category}</span>
       <span style={{fontSize:9,fontWeight:700,color:rc[a.riskLevel],textTransform:"uppercase"}}>{a.riskLevel}</span>
-      <span style={{fontSize:10,color:S.dm,marginLeft:"auto",fontFamily:"monospace"}}>Score: {a.displayScore}/100</span>
     </div>
     <div style={{fontSize:11,color:S.mu,marginBottom:18}}>{a.industry} · {a.tier} · ${a.arr.toLocaleString()} ARR</div>
     <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:18}}>
@@ -135,11 +136,32 @@ function Detail({account:a,onBack}){
           <div style={{fontSize:18,fontWeight:700,color:c,fontFamily:"monospace"}}>{v}</div>
         </div>)}
     </div>
-    <div style={{background:S.op+"08",border:`1px solid ${S.op}28`,borderRadius:7,padding:16,marginBottom:12}}>
-      <div style={{fontSize:9,fontWeight:700,color:S.op,textTransform:"uppercase",letterSpacing:".06em",marginBottom:8}}>AI Signal Synthesis</div>
-      {loading?<div style={{fontSize:11,color:S.mu,fontStyle:"italic"}}>Synthesizing signals...</div>
-      :ai?.brief?<div style={{fontSize:12,lineHeight:1.7,color:S.tx,marginBottom:10}}>{ai.brief}</div>:null}
-      <div style={{display:"flex",flexDirection:"column",gap:6}}>
+    <div style={{background:S.sf,border:`1px solid ${S.bd}`,borderRadius:7,padding:16,marginBottom:12}}>
+      <div style={{fontSize:9,fontWeight:700,color:S.op,textTransform:"uppercase",marginBottom:6}}>Recommended Action</div>
+      <div style={{fontSize:13,color:S.tx,fontWeight:600,marginBottom:4}}>{a.action}</div>
+      <div style={{fontSize:11,color:S.ur,fontWeight:600}}>⚡ {a.impact}</div></div>
+    {loading?<div style={{background:S.ac+"0d",border:`1px solid ${S.ac}28`,borderRadius:7,padding:14,marginBottom:12,display:"flex",alignItems:"center",gap:8}}>
+      <span>🤖</span><span style={{fontSize:11,color:S.mu}}>AI generating briefing...</span></div>
+    :ai?<div style={{background:S.ac+"0d",border:`1px solid ${S.ac}28`,borderRadius:7,padding:16,marginBottom:12}}>
+      <div style={{fontSize:14,fontWeight:700,color:S.tx,marginBottom:6}}>"{ai.headline}"</div>
+      <p style={{fontSize:12,lineHeight:1.7,color:S.so,margin:"0 0 10px"}}>{ai.assessment}</p>
+      <div style={{background:S.bg,borderRadius:5,padding:10,marginBottom:10,borderLeft:`3px solid ${S.ac}`}}>
+        <div style={{fontSize:8,fontWeight:700,color:S.as,textTransform:"uppercase",marginBottom:3}}>→ Do First</div>
+        <div style={{fontSize:12,color:S.tx}}>{ai.first_action}</div></div>
+      {ai.talking_points?.map((t,i)=><div key={i} style={{fontSize:11,color:S.so,padding:"5px 9px",background:S.bg,borderRadius:4,marginBottom:3}}>{t}</div>)}
+      {ai.watch_out&&<div style={{fontSize:11,color:S.ur,marginTop:6}}>⚠ {ai.watch_out}</div>}</div>:null}
+    {dg&&<div style={{background:S.ri+"08",border:`1px solid ${S.ri}28`,borderRadius:7,padding:16,marginBottom:12}}>
+      <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:8}}><span>🛑</span><span style={{fontSize:9,fontWeight:700,color:S.ri,textTransform:"uppercase"}}>Decision Required — AI Cannot Proceed</span></div>
+      <div style={{fontSize:13,fontWeight:600,color:S.tx,marginBottom:5}}>{dg.decision}</div>
+      <div style={{fontSize:11,color:S.so,marginBottom:12,fontStyle:"italic"}}>Why human: {dg.whyHuman}</div>
+      <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+        {dg.options.map((o,i)=><button key={i} onClick={()=>setDec(o)} style={{padding:"8px 14px",borderRadius:5,fontSize:11,fontWeight:600,cursor:"pointer",background:dec===o?S.ac:"transparent",border:`1px solid ${dec===o?S.ac:S.bd}`,color:dec===o?S.wh:S.so}}>{o}</button>)}</div>
+      {dec&&<div style={{marginTop:10,padding:8,background:S.op+"18",border:`1px solid ${S.op}38`,borderRadius:5,fontSize:11,color:S.op,fontWeight:600}}>Decision recorded: {dec}</div>}</div>}
+    {(a.crmNotes||a.supportTranscript||a.recentEmail)&&<div style={{background:S.sf,border:`1px solid ${S.bd}`,borderRadius:7,padding:14,marginBottom:12}}>
+      <div onClick={()=>setEvOpen(p=>!p)} style={{display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer"}}>
+        <div style={{fontSize:9,fontWeight:700,color:S.mu,textTransform:"uppercase",letterSpacing:".06em"}}>Evidence</div>
+        <span style={{fontSize:10,color:S.dm}}>{evOpen?"▾":"▸"}</span></div>
+      {evOpen&&<div style={{display:"flex",flexDirection:"column",gap:6,marginTop:10}}>
         {a.crmNotes&&<div style={{background:S.bg,borderRadius:5,padding:10,borderLeft:`3px solid ${S.ur}`}}>
           <div style={{fontSize:8,fontWeight:700,color:S.ur,textTransform:"uppercase",letterSpacing:".06em",marginBottom:3}}>CRM Notes</div>
           <div style={{fontSize:10,color:S.so,lineHeight:1.5}}>{a.crmNotes}</div></div>}
@@ -149,36 +171,10 @@ function Detail({account:a,onBack}){
         {a.recentEmail&&<div style={{background:S.bg,borderRadius:5,padding:10,borderLeft:`3px solid ${S.mu}`}}>
           <div style={{fontSize:8,fontWeight:700,color:S.mu,textTransform:"uppercase",letterSpacing:".06em",marginBottom:3}}>Recent Email</div>
           <div style={{fontSize:10,color:S.so,lineHeight:1.5}}>{a.recentEmail}</div></div>}
-      </div>
-    </div>
-    {loading&&<div style={{background:S.ac+"0d",border:`1px solid ${S.ac}28`,borderRadius:7,padding:14,marginBottom:12,display:"flex",alignItems:"center",gap:8}}>
-      <span>🤖</span><span style={{fontSize:11,color:S.mu}}>AI generating briefing...</span></div>}
-    {ai&&<div style={{background:S.ac+"0d",border:`1px solid ${S.ac}28`,borderRadius:7,padding:16,marginBottom:12}}>
-      <div style={{fontSize:14,fontWeight:700,color:S.tx,marginBottom:6}}>"{ai.headline}"</div>
-      <p style={{fontSize:12,lineHeight:1.7,color:S.so,margin:"0 0 10px"}}>{ai.assessment}</p>
-      <div style={{background:S.bg,borderRadius:5,padding:10,marginBottom:10,borderLeft:`3px solid ${S.ac}`}}>
-        <div style={{fontSize:8,fontWeight:700,color:S.as,textTransform:"uppercase",marginBottom:3}}>→ Do First</div>
-        <div style={{fontSize:12,color:S.tx}}>{ai.first_action}</div></div>
-      {ai.talking_points?.map((t,i)=><div key={i} style={{fontSize:11,color:S.so,padding:"5px 9px",background:S.bg,borderRadius:4,marginBottom:3}}>{t}</div>)}
-      {ai.watch_out&&<div style={{fontSize:11,color:S.ur,marginTop:6}}>⚠ {ai.watch_out}</div>}</div>}
-    <div style={{background:S.sf,border:`1px solid ${S.bd}`,borderRadius:7,padding:16,marginBottom:12}}>
+      </div>}</div>}
+    <div style={{background:S.sf,border:`1px solid ${S.bd}`,borderRadius:7,padding:16}}>
       <div style={{fontSize:9,fontWeight:700,color:S.mu,textTransform:"uppercase",marginBottom:8}}>Signals ({a.reasons.length})</div>
       {a.reasons.map((r,i)=><div key={i} style={{fontSize:11,color:S.tx,padding:"6px 9px",background:S.bg,borderRadius:4,borderLeft:`3px solid ${cc[a.category]}`,marginBottom:3}}>{r}</div>)}</div>
-    <div style={{background:S.sf,border:`1px solid ${S.bd}`,borderRadius:7,padding:16,marginBottom:12}}>
-      <div style={{fontSize:9,fontWeight:700,color:S.mu,textTransform:"uppercase",marginBottom:6}}>Recommended Action</div>
-      <div style={{fontSize:12,color:S.tx,marginBottom:4}}>{a.action}</div>
-      <div style={{fontSize:11,color:S.ur,fontWeight:600}}>⚡ {a.impact}</div></div>
-    {dg&&<div style={{background:S.ri+"08",border:`1px solid ${S.ri}28`,borderRadius:7,padding:16,marginBottom:12}}>
-      <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:8}}><span>🛑</span><span style={{fontSize:9,fontWeight:700,color:S.ri,textTransform:"uppercase"}}>Decision Required — AI Cannot Proceed</span></div>
-      <div style={{fontSize:13,fontWeight:600,color:S.tx,marginBottom:5}}>{dg.decision}</div>
-      <div style={{fontSize:11,color:S.so,marginBottom:12,fontStyle:"italic"}}>Why human: {dg.whyHuman}</div>
-      <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-        {dg.options.map((o,i)=><button key={i} onClick={()=>setDec(o)} style={{padding:"8px 14px",borderRadius:5,fontSize:11,fontWeight:600,cursor:"pointer",background:dec===o?S.ac:"transparent",border:`1px solid ${dec===o?S.ac:S.bd}`,color:dec===o?S.wh:S.so}}>{o}</button>)}</div>
-      {dec&&<div style={{marginTop:10,padding:8,background:S.op+"18",border:`1px solid ${S.op}38`,borderRadius:5,fontSize:11,color:S.op,fontWeight:600}}>✓ Recorded: "{dec}"</div>}</div>}
-    <div style={{background:S.sf,border:`1px solid ${S.bd}`,borderRadius:7,padding:16}}>
-      <div style={{fontSize:9,fontWeight:700,color:S.mu,textTransform:"uppercase",marginBottom:8}}>Products ({a.adoptedProducts.length}/{PRODUCTS.length})</div>
-      <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
-        {PRODUCTS.map(p=>{const on=a.adoptedProducts.includes(p);return<div key={p} style={{padding:"4px 9px",borderRadius:4,fontSize:10,background:on?S.op+"18":S.bg,color:on?S.op:S.dm,border:`1px solid ${on?S.op+"38":S.bd}`}}>{on?"✓ ":""}{p}</div>;})}</div></div>
   </div>);
 }
 
@@ -287,13 +283,14 @@ export default function BookSense(){
   const[outcomeModal,setOutcomeModal]=useState(null);
   const[outcomeNote,setOutcomeNote]=useState("");
   const[portfolioAI,setPortfolioAI]=useState(()=>{try{return JSON.parse(localStorage.getItem("bs_portfolioAI"));}catch{return null;}});
+  const[decisions,setDecisions]=useState(()=>{try{return JSON.parse(localStorage.getItem("bs_decisions"))||{};}catch{return{};}});
 
   useEffect(()=>{localStorage.setItem("bs_phase",JSON.stringify(phase));},[phase]);
   useEffect(()=>{localStorage.setItem("bs_criteria",JSON.stringify(criteria));},[criteria]);
   useEffect(()=>{localStorage.setItem("bs_actions",JSON.stringify(actions));},[actions]);
   useEffect(()=>{localStorage.setItem("bs_outcomes",JSON.stringify(outcomes));},[outcomes]);
   useEffect(()=>{localStorage.setItem("bs_portfolioAI",JSON.stringify(portfolioAI));},[portfolioAI]);
-  const resetDemo=()=>{["bs_phase","bs_criteria","bs_actions","bs_outcomes","bs_portfolioAI"].forEach(k=>localStorage.removeItem(k));setPhase("welcome");setView("board");setSelected(null);setFilter("all");setSearch("");setCriteria(CRITERIA);setActions({});setOutcomes({});setPortfolioAI(null);};
+  const resetDemo=()=>{["bs_phase","bs_criteria","bs_actions","bs_outcomes","bs_portfolioAI","bs_decisions"].forEach(k=>localStorage.removeItem(k));setPhase("welcome");setView("board");setSelected(null);setFilter("all");setSearch("");setCriteria(CRITERIA);setActions({});setOutcomes({});setPortfolioAI(null);setDecisions({});};
 
   const scored=useMemo(()=>ACCOUNTS.map(a=>score(a,criteria,outcomes)).sort((a,b)=>b.score-a.score),[criteria,outcomes]);
   const cherry=useMemo(()=>{
@@ -337,7 +334,7 @@ export default function BookSense(){
       <div style={{display:"flex",gap:2}}>
         {[{k:"board",l:"Action Board"},{k:"manager",l:"Manager"},{k:"criteria",l:"⚙ Q1 Strategy"}].map(t=>
           <button key={t.k} onClick={()=>{setView(t.k);setSelected(null);}} style={{padding:"5px 12px",borderRadius:5,border:"none",cursor:"pointer",fontSize:10,fontWeight:600,background:view===t.k?S.ac:"transparent",color:view===t.k?S.wh:S.mu}}>{t.l}</button>)}</div></div>
-    {view==="detail"&&selected?<Detail account={selected} onBack={()=>setView("board")}/>
+    {view==="detail"&&selected?<Detail account={selected} onBack={()=>setView("board")} decisions={decisions} setDecisions={setDecisions}/>
     :view==="manager"?<Manager scored={scored} cherry={cherry} gaps={gaps} actions={actions} outcomes={outcomes} portfolioAI={portfolioAI}/>
     :view==="criteria"?<CriteriaPage criteria={criteria} setCriteria={setCriteria} onBack={()=>setView("board")}/>
     :<div style={{padding:"18px 24px"}}>
