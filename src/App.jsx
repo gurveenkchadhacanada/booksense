@@ -144,7 +144,7 @@ function Detail({account:a,onBack}){
   </div>);
 }
 
-function Manager({scored,cherry,gaps,actions}){
+function Manager({scored,cherry,gaps,actions,outcomes}){
   const ct=Object.values(actions).filter(v=>v==="contacted").length;
   const sk=Object.values(actions).filter(v=>v==="skipped").length;
   const un=scored.length-ct-sk;
@@ -171,11 +171,19 @@ function Manager({scored,cherry,gaps,actions}){
       <div style={{fontSize:12,fontWeight:600,color:S.tx,marginBottom:4}}>{cherry.pattern}</div>
       <div style={{fontSize:11,color:S.so,marginBottom:6}}>{cherry.evidence}</div>
       <div style={{fontSize:11,color:S.ur}}><strong>Coaching:</strong> {cherry.rec}</div></div>}
-    {gaps.length>0&&<div style={{background:S.sf,border:`1px solid ${S.bd}`,borderRadius:8,padding:18}}>
+    {gaps.length>0&&<div style={{background:S.sf,border:`1px solid ${S.bd}`,borderRadius:8,padding:18,marginBottom:16}}>
       <div style={{fontSize:10,fontWeight:700,color:S.mu,textTransform:"uppercase",marginBottom:10}}>Coverage Gaps</div>
       {gaps.map((g,i)=><div key={i} style={{padding:10,background:S.bg,borderRadius:5,borderLeft:`3px solid ${S.ri}`,marginBottom:5}}>
         <div style={{fontSize:12,fontWeight:600,color:S.tx,marginBottom:2}}>{g.desc}</div>
         <div style={{fontSize:10,color:S.ri}}>{g.risk}</div></div>)}</div>}
+    {Object.keys(outcomes).length>0&&<div style={{background:S.sf,border:`1px solid ${S.bd}`,borderRadius:8,padding:18}}>
+      <div style={{fontSize:10,fontWeight:700,color:S.mu,textTransform:"uppercase",marginBottom:10}}>Outcome Log</div>
+      {Object.entries(outcomes).map(([id,o])=>{const acc=scored.find(a=>a.id===Number(id));const oc=o.rating==="positive"?S.op:o.rating==="neutral"?S.ur:S.ri;return acc?<div key={id} style={{padding:10,background:S.bg,borderRadius:5,borderLeft:`3px solid ${oc}`,marginBottom:5,display:"flex",alignItems:"center",gap:10}}>
+        <div style={{width:8,height:8,borderRadius:"50%",background:oc,flexShrink:0}}/>
+        <div style={{flex:1}}>
+          <div style={{fontSize:12,fontWeight:600,color:S.tx}}>{acc.name} <span style={{fontSize:9,color:oc,textTransform:"uppercase",fontWeight:700}}>{o.rating}</span></div>
+          {o.note&&<div style={{fontSize:10,color:S.so,marginTop:2}}>{o.note}</div>}</div>
+      </div>:null;})}</div>}
   </div>);
 }
 
@@ -232,6 +240,9 @@ export default function BookSense(){
   const[search,setSearch]=useState("");
   const[criteria,setCriteria]=useState(CRITERIA);
   const[actions,setActions]=useState({});
+  const[outcomes,setOutcomes]=useState({});
+  const[outcomeModal,setOutcomeModal]=useState(null);
+  const[outcomeNote,setOutcomeNote]=useState("");
 
   const scored=useMemo(()=>ACCOUNTS.map(a=>score(a,criteria)).sort((a,b)=>b.score-a.score),[criteria]);
   const cherry=useMemo(()=>{
@@ -271,7 +282,7 @@ export default function BookSense(){
         {[{k:"board",l:"Action Board"},{k:"manager",l:"Manager"},{k:"criteria",l:"⚙ AI Criteria"}].map(t=>
           <button key={t.k} onClick={()=>{setView(t.k);setSelected(null);}} style={{padding:"5px 12px",borderRadius:5,border:"none",cursor:"pointer",fontSize:10,fontWeight:600,background:view===t.k?S.ac:"transparent",color:view===t.k?S.wh:S.mu}}>{t.l}</button>)}</div></div>
     {view==="detail"&&selected?<Detail account={selected} onBack={()=>setView("board")}/>
-    :view==="manager"?<Manager scored={scored} cherry={cherry} gaps={gaps} actions={actions}/>
+    :view==="manager"?<Manager scored={scored} cherry={cherry} gaps={gaps} actions={actions} outcomes={outcomes}/>
     :view==="criteria"?<CriteriaPage criteria={criteria} setCriteria={setCriteria} onBack={()=>setView("board")}/>
     :<div style={{padding:"18px 24px"}}>
       <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap"}}>
@@ -305,9 +316,10 @@ export default function BookSense(){
           <span style={{background:cc[a.category]+"18",color:cc[a.category],border:`1px solid ${cc[a.category]}44`,padding:"2px 7px",borderRadius:4,fontSize:9,fontWeight:700,textTransform:"uppercase"}}>{a.category}</span>
           <div style={{fontSize:9,fontWeight:600,color:rc[a.riskLevel]}}>{a.riskLevel}</div>
           <div onClick={()=>{setSelected(a);setView("detail");}} style={{fontSize:10,color:S.so,lineHeight:1.35,overflow:"hidden",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>{a.action}</div>
-          <div style={{display:"flex",gap:3}} onClick={e=>e.stopPropagation()}>
-            <button onClick={()=>setActions(p=>({...p,[a.id]:p[a.id]==="contacted"?undefined:"contacted"}))} style={{width:26,height:22,borderRadius:4,border:`1px solid ${st==="contacted"?S.op:S.bd}`,cursor:"pointer",background:st==="contacted"?S.op+"18":"transparent",color:st==="contacted"?S.op:S.dm,fontSize:11,display:"flex",alignItems:"center",justifyContent:"center"}}>✓</button>
-            <button onClick={()=>setActions(p=>({...p,[a.id]:p[a.id]==="skipped"?undefined:"skipped"}))} style={{width:26,height:22,borderRadius:4,border:`1px solid ${st==="skipped"?S.ri:S.bd}`,cursor:"pointer",background:st==="skipped"?S.ri+"18":"transparent",color:st==="skipped"?S.ri:S.dm,fontSize:11,display:"flex",alignItems:"center",justifyContent:"center"}}>✗</button></div>
+          <div style={{display:"flex",gap:3,alignItems:"center"}} onClick={e=>e.stopPropagation()}>
+            <button onClick={()=>{if(st==="contacted"){setActions(p=>({...p,[a.id]:undefined}));setOutcomes(p=>{const n={...p};delete n[a.id];return n;});}else{setOutcomeModal(a.id);setOutcomeNote("");}}} style={{width:26,height:22,borderRadius:4,border:`1px solid ${st==="contacted"?S.op:S.bd}`,cursor:"pointer",background:st==="contacted"?S.op+"18":"transparent",color:st==="contacted"?S.op:S.dm,fontSize:11,display:"flex",alignItems:"center",justifyContent:"center"}}>✓</button>
+            <button onClick={()=>setActions(p=>({...p,[a.id]:p[a.id]==="skipped"?undefined:"skipped"}))} style={{width:26,height:22,borderRadius:4,border:`1px solid ${st==="skipped"?S.ri:S.bd}`,cursor:"pointer",background:st==="skipped"?S.ri+"18":"transparent",color:st==="skipped"?S.ri:S.dm,fontSize:11,display:"flex",alignItems:"center",justifyContent:"center"}}>✗</button>
+            {outcomes[a.id]&&<div style={{width:7,height:7,borderRadius:"50%",background:outcomes[a.id].rating==="positive"?S.op:outcomes[a.id].rating==="neutral"?S.ur:S.ri}}/>}</div>
         </div>);})}
       <div style={{marginTop:20,padding:14,background:S.sf,border:`1px solid ${S.bd}`,borderRadius:7}}>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14}}>
@@ -315,5 +327,16 @@ export default function BookSense(){
           <div><div style={{fontSize:8,fontWeight:700,color:S.op,textTransform:"uppercase",marginBottom:5}}>👤 Human can now</div><div style={{fontSize:10,color:S.mu,lineHeight:1.6}}>Manage 300 accounts with data-driven prioritization. Prep any call in 60s. Catch churn before it happens. Configure AI strategy per quarter.</div></div>
           <div><div style={{fontSize:8,fontWeight:700,color:S.ri,textTransform:"uppercase",marginBottom:5}}>🛑 AI stops here</div><div style={{fontSize:10,color:S.mu,lineHeight:1.6}}>Discount decisions. Escalation. Churn save negotiation. Contract terms. Requires relationship context and resource authority.</div></div></div></div>
     </div>}
+    {outcomeModal!==null&&(()=>{const ma=scored.find(x=>x.id===outcomeModal);return<div onClick={()=>setOutcomeModal(null)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.65)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:999}}>
+      <div onClick={e=>e.stopPropagation()} style={{background:S.sf,border:`1px solid ${S.bd}`,borderRadius:10,padding:24,width:340,maxWidth:"90vw"}}>
+        <div style={{fontSize:14,fontWeight:700,color:S.tx,marginBottom:4}}>Outcome Capture</div>
+        <div style={{fontSize:11,color:S.mu,marginBottom:16}}>{ma?.name}</div>
+        <div style={{fontSize:9,fontWeight:700,color:S.mu,textTransform:"uppercase",marginBottom:8}}>Rate this interaction</div>
+        <div style={{display:"flex",gap:8,marginBottom:14}}>
+          {[["positive","Positive",S.op],["neutral","Neutral",S.ur],["negative","Negative",S.ri]].map(([k,l,c])=>
+            <button key={k} onClick={()=>{setActions(p=>({...p,[outcomeModal]:"contacted"}));setOutcomes(p=>({...p,[outcomeModal]:{rating:k,note:outcomeNote}}));setOutcomeModal(null);}} style={{flex:1,padding:"10px 0",borderRadius:6,border:`1px solid ${c}44`,cursor:"pointer",background:c+"18",color:c,fontSize:12,fontWeight:700}}>{l}</button>)}</div>
+        <input placeholder="Optional note..." value={outcomeNote} onChange={e=>setOutcomeNote(e.target.value)} style={{width:"100%",padding:"8px 10px",borderRadius:5,border:`1px solid ${S.bd}`,background:S.bg,color:S.tx,fontSize:11,outline:"none",boxSizing:"border-box"}}/>
+        <button onClick={()=>setOutcomeModal(null)} style={{marginTop:10,background:"none",border:"none",color:S.dm,cursor:"pointer",fontSize:10,padding:0}}>Cancel</button>
+      </div></div>;})()}
   </div>);
 }
