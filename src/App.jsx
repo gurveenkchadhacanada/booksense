@@ -151,7 +151,7 @@ function Manager({scored,cherry,gaps,actions,outcomes,portfolioAI}){
   const sk=Object.values(actions).filter(v=>v==="skipped").length;
   const un=scored.length-ct-sk;
   const skHi=scored.filter((_,i)=>i<10&&actions[_.id]==="skipped");
-  return(<div style={{padding:20,maxWidth:1000}}>
+  return(<div style={{padding:20}}>
     <h2 style={{fontSize:20,fontWeight:700,color:S.tx,margin:"0 0 4px"}}>Manager Dashboard</h2>
     <p style={{fontSize:12,color:S.mu,marginBottom:18}}>CSM behavioral oversight.</p>
     <div style={{background:S.sf,border:`1px solid ${S.bd}`,borderRadius:8,padding:18,marginBottom:16}}>
