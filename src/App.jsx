@@ -25,9 +25,11 @@ const ACCOUNTS = [
 ];
 
 const CRITERIA = [
-  {id:"renewal",label:"Renewal Urgency"},{id:"churn",label:"Churn Risk"},{id:"expansion",label:"Expansion Potential"},
+  {id:"churn",label:"Churn Risk"},{id:"renewal",label:"Renewal Urgency"},{id:"expansion",label:"Expansion Potential"},
   {id:"engagement",label:"Engagement Gap"},{id:"arrValue",label:"ARR Value"},{id:"supportHealth",label:"Support Health"},
 ];
+const STRATEGY_LABELS={churn:"Retention",renewal:"Retention",expansion:"Growth",engagement:"Re-engagement",arrValue:"Revenue",supportHealth:"Support"};
+function strategyBadge(criteria){return`Q1 Strategy: ${STRATEGY_LABELS[criteria[0]?.id]||"Custom"} Mode`;}
 
 function score(a, criteria, outcomes) {
   const w = {}; criteria.forEach((c,i) => { w[c.id] = 1.0 + (criteria.length-1-i)*0.25; });
@@ -224,7 +226,7 @@ function CriteriaPage({criteria,setCriteria,onBack}){
   const di=useRef(null),dv=useRef(null);
   return(<div style={{padding:20,maxWidth:560}}>
     <button onClick={onBack} style={{background:"none",border:"none",color:S.as,cursor:"pointer",fontSize:12,marginBottom:14,padding:0}}>← Back</button>
-    <div style={{marginBottom:10}}><span style={{background:"rgba(124,92,252,0.15)",color:"#b8a5ff",padding:"5px 14px",borderRadius:5,fontSize:13,fontWeight:600,letterSpacing:".02em"}}>Q1 Strategy: Retention Mode</span></div>
+    <div style={{marginBottom:10}}><span style={{background:"rgba(124,92,252,0.15)",color:"#b8a5ff",padding:"5px 14px",borderRadius:5,fontSize:13,fontWeight:600,letterSpacing:".02em"}}>{strategyBadge(criteria)}</span></div>
     <h2 style={{fontSize:20,fontWeight:700,color:S.tx,marginBottom:4}}>AI Strategy</h2>
     <p style={{fontSize:12,color:S.mu,marginBottom:4}}>Drag to reorder. #1 has most influence. Board re-ranks instantly.</p>
     <p style={{fontSize:11,color:S.ac,marginBottom:20}}>Churn Risk and Renewal Urgency are weighted highest for retention quarters.</p>
@@ -250,7 +252,7 @@ function CriteriaPage({criteria,setCriteria,onBack}){
 }
 
 const LOAD_MSGS=["Connecting to Salesforce CRM...","Ingesting 847 CRM notes...","Connecting to Zendesk Support...","Processing 234 support transcripts...","Connecting to Gmail...","Reading 156 recent email threads...","Running AI analysis across all accounts...","Detecting cross-account patterns...","Generating priority rankings..."];
-function Welcome({onRun,onStart}){
+function Welcome({onRun,onStart,criteria}){
   const[running,setRunning]=useState(false);
   const[msgIdx,setMsgIdx]=useState(0);
   useEffect(()=>{if(!running)return;const iv=setInterval(()=>setMsgIdx(i=>i<LOAD_MSGS.length-1?i+1:i),400);return()=>clearInterval(iv);},[running]);
@@ -262,7 +264,7 @@ function Welcome({onRun,onStart}){
         <span style={{fontSize:24,fontWeight:700,color:S.tx}}>BookSense</span></div>
       <h1 style={{fontSize:28,fontWeight:700,color:S.tx,marginBottom:8}}>Good morning, Gurveen</h1>
       <p style={{fontSize:14,color:S.mu,marginBottom:6}}>{today}</p>
-      <div style={{marginBottom:10}}><span style={{background:"rgba(124,92,252,0.15)",color:"#b8a5ff",padding:"5px 14px",borderRadius:5,fontSize:13,fontWeight:600,letterSpacing:".02em"}}>Q1 Strategy: Retention Mode</span></div>
+      <div style={{marginBottom:10}}><span style={{background:"rgba(124,92,252,0.15)",color:"#b8a5ff",padding:"5px 14px",borderRadius:5,fontSize:13,fontWeight:600,letterSpacing:".02em"}}>{strategyBadge(criteria)}</span></div>
       <p style={{fontSize:14,color:S.so,marginBottom:36}}><span style={{color:S.tx,fontWeight:600}}>20 accounts</span> ready for AI prioritization.</p>
       {!running?<button onClick={()=>{setRunning(true);if(onStart)onStart();setTimeout(onRun,4000);}} style={{padding:"14px 36px",borderRadius:8,border:"none",cursor:"pointer",background:`linear-gradient(135deg,${S.ac},#6344e0)`,color:S.wh,fontSize:15,fontWeight:700,boxShadow:`0 4px 24px ${S.ac}59`}}>Run Prioritization</button>
       :<div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:12}}>
@@ -321,7 +323,7 @@ export default function BookSense(){
   const zt=scored.filter(a=>a.totalTouchpoints===0).length;
   const dark=scored.filter(a=>a.daysSinceLastTouch>60).length;
 
-  if(phase==="welcome")return<><style>{`*{box-sizing:border-box;margin:0}@keyframes bp{0%,100%{opacity:.2}50%{opacity:1}}@keyframes fadeMsg{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}`}</style><Welcome onRun={()=>setPhase("app")} onStart={()=>{portfolioAnalysis().then(r=>{if(r)setPortfolioAI(r);});}}/></>;
+  if(phase==="welcome")return<><style>{`*{box-sizing:border-box;margin:0}@keyframes bp{0%,100%{opacity:.2}50%{opacity:1}}@keyframes fadeMsg{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}`}</style><Welcome criteria={criteria} onRun={()=>setPhase("app")} onStart={()=>{portfolioAnalysis().then(r=>{if(r)setPortfolioAI(r);});}}/></>;
 
   return(<div style={{minHeight:"100vh",background:S.bg,color:S.tx,fontFamily:"-apple-system,'Segoe UI',sans-serif"}}>
     <style>{`*{box-sizing:border-box;margin:0}@keyframes bp{0%,100%{opacity:.2}50%{opacity:1}}@keyframes fi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:${S.bd};border-radius:3px}`}</style>
