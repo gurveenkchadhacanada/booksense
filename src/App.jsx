@@ -222,33 +222,26 @@ function Manager({scored,cherry,gaps,actions,outcomes,portfolioAI}){
   </div>);
 }
 
+const CRITERIA_TIPS={churn:"Likelihood of account cancellation based on usage, engagement, and sentiment signals.",renewal:"How close the renewal date is and whether the account is engaged enough to renew.",expansion:"Signals that an account is ready to upgrade, add products, or increase spend.",engagement:"Gaps in touchpoints, response times, and proactive outreach relative to account value.",arrValue:"Weighting by contract size so higher-value accounts surface first.",supportHealth:"Open ticket volume, resolution times, and escalation patterns."};
 function CriteriaPage({criteria,setCriteria,onBack}){
   const di=useRef(null),dv=useRef(null);
-  return(<div style={{padding:20,maxWidth:560}}>
+  return(<div style={{padding:20,maxWidth:460,margin:"0 auto"}}>
     <button onClick={onBack} style={{background:"none",border:"none",color:S.as,cursor:"pointer",fontSize:12,marginBottom:14,padding:0}}>← Back</button>
     <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:4}}>
       <h2 style={{fontSize:20,fontWeight:700,color:S.tx,margin:0}}>Q1 Strategy</h2>
       <span style={{background:"rgba(124,92,252,0.15)",color:"#b8a5ff",padding:"4px 12px",borderRadius:5,fontSize:12,fontWeight:600,letterSpacing:".02em"}}>{STRATEGY_LABELS[criteria[0]?.id]||"Custom"} Mode</span></div>
-    <p style={{fontSize:12,color:S.mu,marginBottom:4}}>Drag to reorder. #1 has most influence. Board re-ranks instantly.</p>
-    <p style={{fontSize:11,color:S.ac,marginBottom:20}}>Churn Risk and Renewal Urgency are weighted highest for retention quarters.</p>
+    <p style={{fontSize:12,color:S.mu,marginBottom:20}}>Drag to set your priorities. The AI does the rest.</p>
     <div style={{display:"flex",flexDirection:"column",gap:6}}>
-      {criteria.map((c,i)=>{const inf=Math.round(100-(i/(criteria.length-1))*60);return(
+      {criteria.map((c,i)=>
         <div key={c.id} draggable onDragStart={()=>di.current=i} onDragEnter={()=>dv.current=i} onDragOver={e=>e.preventDefault()}
           onDragEnd={()=>{const l=[...criteria];const d=l.splice(di.current,1)[0];l.splice(dv.current,0,d);setCriteria(l);}}
+          title={CRITERIA_TIPS[c.id]||""}
           style={{background:S.sf,border:`1px solid ${S.bd}`,borderRadius:8,padding:"14px 16px",cursor:"grab",display:"flex",alignItems:"center",gap:14}}>
           <div style={{fontSize:14,color:S.dm}}>⠿</div>
           <div style={{fontSize:11,fontWeight:700,color:i===0?S.as:S.mu,fontFamily:"monospace",width:20}}>#{i+1}</div>
           <div style={{flex:1}}><div style={{fontSize:13,fontWeight:600,color:S.tx}}>{c.label}</div></div>
-          <div style={{display:"flex",alignItems:"center",gap:8}}>
-            <div style={{width:48,height:4,borderRadius:2,background:S.bd,overflow:"hidden"}}>
-              <div style={{width:`${inf}%`,height:"100%",background:i===0?S.ac:S.mu,borderRadius:2}}/></div>
-            <span style={{fontSize:10,color:S.dm,fontFamily:"monospace",width:28}}>{inf}%</span></div>
-        </div>);})}</div>
-    <div style={{marginTop:20,padding:14,background:S.ac+"0d",border:`1px solid ${S.ac}28`,borderRadius:8}}>
-      <div style={{fontSize:10,fontWeight:700,color:S.as,textTransform:"uppercase",marginBottom:6}}>Strategy examples</div>
-      <div style={{fontSize:11,color:S.so,lineHeight:1.7}}>
-        <strong style={{color:S.tx}}>Retention quarter:</strong> Drag Churn Risk to top.<br/>
-        <strong style={{color:S.tx}}>Growth quarter:</strong> Drag Expansion Potential to #1.</div></div>
+        </div>)}</div>
+    <p style={{fontSize:11,color:S.dm,lineHeight:1.7,marginTop:20}}>You set the priorities. The AI interprets them alongside real-time signals, behavioral patterns, and cross-account context to generate daily recommendations. This is strategic input, not a formula.</p>
   </div>);
 }
 
