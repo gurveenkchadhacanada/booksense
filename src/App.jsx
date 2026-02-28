@@ -151,7 +151,7 @@ function Manager({scored,cherry,gaps,actions,outcomes,portfolioAI}){
   const sk=Object.values(actions).filter(v=>v==="skipped").length;
   const un=scored.length-ct-sk;
   const skHi=scored.filter((_,i)=>i<10&&actions[_.id]==="skipped");
-  return(<div style={{padding:20,maxWidth:700}}>
+  return(<div style={{padding:20,maxWidth:1000}}>
     <h2 style={{fontSize:20,fontWeight:700,color:S.tx,margin:"0 0 4px"}}>Manager Dashboard</h2>
     <p style={{fontSize:12,color:S.mu,marginBottom:18}}>CSM behavioral oversight.</p>
     <div style={{background:S.sf,border:`1px solid ${S.bd}`,borderRadius:8,padding:18,marginBottom:16}}>
@@ -300,6 +300,7 @@ export default function BookSense(){
         <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6}}>
           <span style={{fontSize:11}}>🤖</span><span style={{fontSize:9,fontWeight:700,color:S.as,textTransform:"uppercase"}}>Portfolio Assessment</span></div>
         <p style={{fontSize:12,lineHeight:1.7,color:S.tx,margin:0}}>{portfolioAI?.portfolio_summary||summary}</p></div>
+      <div style={{fontSize:9,color:S.dm,marginBottom:12,marginTop:-8}}>🗄 Data sources: Salesforce CRM · Zendesk Support · Gmail</div>
       {portfolioAI?.cross_account_patterns?.length>0&&<div style={{background:S.sf,border:`1px solid ${S.bd}`,borderRadius:7,padding:14,marginBottom:18}}>
         <div style={{fontSize:9,fontWeight:700,color:S.mu,textTransform:"uppercase",letterSpacing:".06em",marginBottom:8}}>Cross-Account Patterns</div>
         {portfolioAI.cross_account_patterns.map((p,i)=><div key={i} style={{fontSize:11,color:S.so,padding:"6px 9px",background:S.bg,borderRadius:4,borderLeft:`3px solid ${S.ac}`,marginBottom:3,lineHeight:1.5}}>{p}</div>)}</div>}
