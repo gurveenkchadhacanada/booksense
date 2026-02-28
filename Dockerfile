@@ -5,9 +5,8 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-FROM node:20-alpine
-RUN npm install -g serve
-WORKDIR /app
-COPY --from=build /app/dist ./dist
+FROM nginx:alpine
+COPY --from=build /app/dist /usr/share/nginx/html
+COPY nginx.conf.template /etc/nginx/templates/default.conf.template
 EXPOSE 3000
-CMD sh -c "npx serve dist -l tcp://0.0.0.0:${PORT:-3000}"
+CMD sh -c "envsubst '\$PORT' < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
