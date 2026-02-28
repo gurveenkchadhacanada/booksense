@@ -326,7 +326,7 @@ export default function BookSense(){
   return(<div style={{minHeight:"100vh",background:S.bg,color:S.tx,fontFamily:"-apple-system,'Segoe UI',sans-serif"}}>
     <style>{`*{box-sizing:border-box;margin:0}@keyframes bp{0%,100%{opacity:.2}50%{opacity:1}}@keyframes fi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:${S.bd};border-radius:3px}`}</style>
     <div style={{borderBottom:`1px solid ${S.bd}`,padding:"11px 24px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-      <div style={{display:"flex",alignItems:"center",gap:8}}>
+      <div onClick={()=>{setPhase("welcome");setView("board");setSelected(null);}} style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer"}}>
         <div style={{width:6,height:6,borderRadius:"50%",background:S.ac,boxShadow:`0 0 8px ${S.ac}`}}/>
         <span style={{fontSize:14,fontWeight:700}}>BookSense</span></div>
       <div style={{display:"flex",gap:2}}>
