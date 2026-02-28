@@ -146,8 +146,8 @@ function Detail({account:a,onBack,decisions,setDecisions}){
       <div style={{fontSize:11,color:S.ur,fontWeight:600}}>⚡ {a.impact}</div></div>
     {loading?<div style={{background:S.ac+"0d",border:`1px solid ${S.ac}28`,borderRadius:7,padding:14,marginBottom:12,display:"flex",alignItems:"center",gap:8}}>
       <span>🤖</span><span style={{fontSize:11,color:S.mu}}>AI generating briefing...</span></div>
-    :ai?<div style={{background:S.ac+"0d",border:`1px solid ${S.ac}28`,borderRadius:7,padding:16,marginBottom:12}}>
-      <div style={{fontSize:14,fontWeight:700,color:S.tx,marginBottom:6}}>"{ai.headline}"</div>
+    :ai?<div style={{background:S.ac+"0d",border:`1px solid ${S.ac}28`,borderLeft:`3px solid ${S.ac}`,borderRadius:7,padding:16,marginBottom:12}}>
+      <div style={{fontSize:"1.1em",fontWeight:700,color:S.tx,marginBottom:6}}>"{ai.headline}"</div>
       <p style={{fontSize:12,lineHeight:1.7,color:S.so,margin:"0 0 10px"}}>{ai.assessment}</p>
       {ai.talking_points?.map((t,i)=><div key={i} style={{fontSize:11,color:S.so,padding:"5px 9px",background:S.bg,borderRadius:4,marginBottom:3}}>{t}</div>)}
       {ai.watch_out&&<div style={{fontSize:11,color:S.ur,marginTop:6}}>⚠ {ai.watch_out}</div>}</div>:null}
