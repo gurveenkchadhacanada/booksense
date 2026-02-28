@@ -60,10 +60,11 @@ function score(a, criteria, outcomes) {
   const oc=outcomes?.[a.id];
   if(oc?.rating==="negative"){r+=15;reasons.push("Previous interaction: Negative — escalated priority");}
   if(oc?.rating==="neutral"){reasons.push("Previous interaction: Neutral — monitoring");}
-  let sc=Math.min(100,Math.round((u+r+o)*am));
+  let sc=Math.round((u+r+o)*am);
   if(oc?.rating==="positive"){sc=Math.max(0,sc-10);reasons.push("Previous interaction: Positive — reduced urgency");}
   const cat=r>=o&&r>=u?"risk":u>=o?"urgency":"opportunity";
-  const rl=sc>=75?"critical":sc>=50?"high":sc>=30?"medium":"low";
+  const display=Math.min(100,sc);
+  const rl=display>=75?"critical":display>=50?"high":display>=30?"medium":"low";
   let action="Routine check-in",impact="Maintain cadence";
   if(a.daysUntilRenewal<=30&&(a.usageTrend<-10||a.npsScore<=5)){action=`Emergency save: Call decision-maker. Resolve ${a.openTickets} tickets first.`;impact=`$${(a.arr/1000)|0}k at immediate risk`;}
   else if(a.daysUntilRenewal<=30){action="Start renewal conversation now.";impact=`$${(a.arr/1000)|0}k renewal in ${a.daysUntilRenewal}d`;}
@@ -74,7 +75,7 @@ function score(a, criteria, outcomes) {
   let dg=null;
   if(a.daysUntilRenewal<=30&&(a.usageTrend<-10||a.npsScore<=5))dg={decision:`Offer discount to save $${(a.arr/1000)|0}k?`,whyHuman:"Commits revenue and sets precedent. AI can't weigh relationship history.",options:["15% discount","Add services","Escalate to VP","Hold pricing"]};
   else if(a.totalTouchpoints===0&&a.arr>=50000)dg={decision:"Acknowledge neglect or start fresh?",whyHuman:"Honesty may build trust or erode confidence.",options:["Acknowledge & recover","Fresh start","White-glove escalation"]};
-  return{...a,score:sc,reasons,category:cat,riskLevel:rl,action,impact,decisionGate:dg};
+  return{...a,score:sc,displayScore:display,reasons,category:cat,riskLevel:rl,action,impact,decisionGate:dg};
 }
 
 const S={bg:"#08080c",sf:"#111118",ra:"#16161f",bd:"#1c1c2a",tx:"#e8e8f0",so:"#a0a0b8",mu:"#6a6a82",dm:"#404058",ac:"#7c5cfc",as:"#9b85fc",ri:"#f43f5e",op:"#10b981",ur:"#f59e0b",wh:"#fff"};
@@ -118,7 +119,7 @@ function Detail({account:a,onBack}){
       <h2 style={{fontSize:20,fontWeight:700,color:S.tx,margin:0}}>{a.name}</h2>
       <span style={{background:cc[a.category]+"18",color:cc[a.category],border:`1px solid ${cc[a.category]}44`,padding:"2px 7px",borderRadius:4,fontSize:9,fontWeight:700,textTransform:"uppercase"}}>{a.category}</span>
       <span style={{fontSize:9,fontWeight:700,color:rc[a.riskLevel],textTransform:"uppercase"}}>{a.riskLevel}</span>
-      <span style={{fontSize:10,color:S.dm,marginLeft:"auto",fontFamily:"monospace"}}>Score: {a.score}/100</span>
+      <span style={{fontSize:10,color:S.dm,marginLeft:"auto",fontFamily:"monospace"}}>Score: {a.displayScore}/100</span>
     </div>
     <div style={{fontSize:11,color:S.mu,marginBottom:18}}>{a.industry} · {a.tier} · ${a.arr.toLocaleString()} ARR</div>
     <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:18}}>
@@ -273,7 +274,7 @@ export default function BookSense(){
   const[selected,setSelected]=useState(null);
   const[filter,setFilter]=useState("all");
   const[search,setSearch]=useState("");
-  const[criteria,setCriteria]=useState(CRITERIA);
+  const[criteria,setCriteria]=useState(()=>{try{const s=JSON.parse(localStorage.getItem("bs_criteria"));if(s&&s.length===CRITERIA.length)return s;return CRITERIA;}catch{return CRITERIA;}});
   const[actions,setActions]=useState(()=>{try{return JSON.parse(localStorage.getItem("bs_actions"))||{};}catch{return{};}});
   const[outcomes,setOutcomes]=useState(()=>{try{return JSON.parse(localStorage.getItem("bs_outcomes"))||{};}catch{return{};}});
   const[patternsOpen,setPatternsOpen]=useState(false);
@@ -282,10 +283,11 @@ export default function BookSense(){
   const[portfolioAI,setPortfolioAI]=useState(()=>{try{return JSON.parse(localStorage.getItem("bs_portfolioAI"));}catch{return null;}});
 
   useEffect(()=>{localStorage.setItem("bs_phase",JSON.stringify(phase));},[phase]);
+  useEffect(()=>{localStorage.setItem("bs_criteria",JSON.stringify(criteria));},[criteria]);
   useEffect(()=>{localStorage.setItem("bs_actions",JSON.stringify(actions));},[actions]);
   useEffect(()=>{localStorage.setItem("bs_outcomes",JSON.stringify(outcomes));},[outcomes]);
   useEffect(()=>{localStorage.setItem("bs_portfolioAI",JSON.stringify(portfolioAI));},[portfolioAI]);
-  const resetDemo=()=>{["bs_phase","bs_actions","bs_outcomes","bs_portfolioAI"].forEach(k=>localStorage.removeItem(k));setPhase("welcome");setView("board");setSelected(null);setFilter("all");setSearch("");setCriteria(CRITERIA);setActions({});setOutcomes({});setPortfolioAI(null);};
+  const resetDemo=()=>{["bs_phase","bs_criteria","bs_actions","bs_outcomes","bs_portfolioAI"].forEach(k=>localStorage.removeItem(k));setPhase("welcome");setView("board");setSelected(null);setFilter("all");setSearch("");setCriteria(CRITERIA);setActions({});setOutcomes({});setPortfolioAI(null);};
 
   const scored=useMemo(()=>ACCOUNTS.map(a=>score(a,criteria,outcomes)).sort((a,b)=>b.score-a.score),[criteria,outcomes]);
   const cherry=useMemo(()=>{
