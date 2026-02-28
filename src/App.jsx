@@ -226,8 +226,9 @@ function CriteriaPage({criteria,setCriteria,onBack}){
   const di=useRef(null),dv=useRef(null);
   return(<div style={{padding:20,maxWidth:560}}>
     <button onClick={onBack} style={{background:"none",border:"none",color:S.as,cursor:"pointer",fontSize:12,marginBottom:14,padding:0}}>← Back</button>
-    <div style={{marginBottom:10}}><span style={{background:"rgba(124,92,252,0.15)",color:"#b8a5ff",padding:"5px 14px",borderRadius:5,fontSize:13,fontWeight:600,letterSpacing:".02em"}}>{strategyBadge(criteria)}</span></div>
-    <h2 style={{fontSize:20,fontWeight:700,color:S.tx,marginBottom:4}}>AI Strategy</h2>
+    <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:4}}>
+      <h2 style={{fontSize:20,fontWeight:700,color:S.tx,margin:0}}>Q1 Strategy</h2>
+      <span style={{background:"rgba(124,92,252,0.15)",color:"#b8a5ff",padding:"4px 12px",borderRadius:5,fontSize:12,fontWeight:600,letterSpacing:".02em"}}>{STRATEGY_LABELS[criteria[0]?.id]||"Custom"} Mode</span></div>
     <p style={{fontSize:12,color:S.mu,marginBottom:4}}>Drag to reorder. #1 has most influence. Board re-ranks instantly.</p>
     <p style={{fontSize:11,color:S.ac,marginBottom:20}}>Churn Risk and Renewal Urgency are weighted highest for retention quarters.</p>
     <div style={{display:"flex",flexDirection:"column",gap:6}}>
