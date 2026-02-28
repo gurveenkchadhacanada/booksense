@@ -269,17 +269,23 @@ function Welcome({onRun,onStart}){
 }
 
 export default function BookSense(){
-  const[phase,setPhase]=useState("welcome");
+  const[phase,setPhase]=useState(()=>{try{return JSON.parse(localStorage.getItem("bs_phase"))||"welcome";}catch{return"welcome";}});
   const[view,setView]=useState("board");
   const[selected,setSelected]=useState(null);
   const[filter,setFilter]=useState("all");
   const[search,setSearch]=useState("");
   const[criteria,setCriteria]=useState(CRITERIA);
-  const[actions,setActions]=useState({});
-  const[outcomes,setOutcomes]=useState({});
+  const[actions,setActions]=useState(()=>{try{return JSON.parse(localStorage.getItem("bs_actions"))||{};}catch{return{};}});
+  const[outcomes,setOutcomes]=useState(()=>{try{return JSON.parse(localStorage.getItem("bs_outcomes"))||{};}catch{return{};}});
   const[outcomeModal,setOutcomeModal]=useState(null);
   const[outcomeNote,setOutcomeNote]=useState("");
-  const[portfolioAI,setPortfolioAI]=useState(null);
+  const[portfolioAI,setPortfolioAI]=useState(()=>{try{return JSON.parse(localStorage.getItem("bs_portfolioAI"));}catch{return null;}});
+
+  useEffect(()=>{localStorage.setItem("bs_phase",JSON.stringify(phase));},[phase]);
+  useEffect(()=>{localStorage.setItem("bs_actions",JSON.stringify(actions));},[actions]);
+  useEffect(()=>{localStorage.setItem("bs_outcomes",JSON.stringify(outcomes));},[outcomes]);
+  useEffect(()=>{localStorage.setItem("bs_portfolioAI",JSON.stringify(portfolioAI));},[portfolioAI]);
+  const resetDemo=()=>{["bs_phase","bs_actions","bs_outcomes","bs_portfolioAI"].forEach(k=>localStorage.removeItem(k));setPhase("welcome");setView("board");setSelected(null);setFilter("all");setSearch("");setCriteria(CRITERIA);setActions({});setOutcomes({});setPortfolioAI(null);};
 
   const scored=useMemo(()=>ACCOUNTS.map(a=>score(a,criteria,outcomes)).sort((a,b)=>b.score-a.score),[criteria,outcomes]);
   const cherry=useMemo(()=>{
@@ -374,6 +380,7 @@ export default function BookSense(){
           <div><div style={{fontSize:8,fontWeight:700,color:S.as,textTransform:"uppercase",marginBottom:5}}>🤖 AI owns</div><div style={{fontSize:10,color:S.mu,lineHeight:1.6}}>Signal aggregation, priority scoring, cherry-picking detection, coverage gaps, per-account briefings, decision gate identification.</div></div>
           <div><div style={{fontSize:8,fontWeight:700,color:S.op,textTransform:"uppercase",marginBottom:5}}>👤 Human can now</div><div style={{fontSize:10,color:S.mu,lineHeight:1.6}}>Manage 300 accounts with data-driven prioritization. Prep any call in 60s. Catch churn before it happens. Configure AI strategy per quarter.</div></div>
           <div><div style={{fontSize:8,fontWeight:700,color:S.ri,textTransform:"uppercase",marginBottom:5}}>🛑 AI stops here</div><div style={{fontSize:10,color:S.mu,lineHeight:1.6}}>Discount decisions. Escalation. Churn save negotiation. Contract terms. Requires relationship context and resource authority.</div></div></div></div>
+      <div style={{textAlign:"center",marginTop:18}}><button onClick={resetDemo} style={{background:"none",border:`1px solid ${S.bd}`,borderRadius:5,padding:"4px 12px",fontSize:9,color:S.dm,cursor:"pointer"}}>Reset Demo</button></div>
     </div>}
     {outcomeModal!==null&&(()=>{const ma=scored.find(x=>x.id===outcomeModal);return<div onClick={()=>setOutcomeModal(null)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.65)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:999}}>
       <div onClick={e=>e.stopPropagation()} style={{background:S.sf,border:`1px solid ${S.bd}`,borderRadius:10,padding:24,width:340,maxWidth:"90vw"}}>
