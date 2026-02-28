@@ -32,7 +32,7 @@ const STRATEGY_LABELS={churn:"Retention",renewal:"Retention",expansion:"Growth",
 function strategyBadge(criteria){return`Q1 Strategy: ${STRATEGY_LABELS[criteria[0]?.id]||"Custom"} Mode`;}
 
 function score(a, criteria, outcomes) {
-  const w = {}; criteria.forEach((c,i) => { w[c.id] = 1.0 + (criteria.length-1-i)*0.25; });
+  const w = {}; criteria.forEach((c,i) => { w[c.id] = 0.5 + (criteria.length-1-i)*0.5; });
   let u=0, r=0, o=0; const reasons = [];
   if(a.daysUntilRenewal<=21){u+=40*w.renewal;reasons.push(`Renewal in ${a.daysUntilRenewal}d`);}
   else if(a.daysUntilRenewal<=45){u+=28*w.renewal;reasons.push(`Renewal in ${a.daysUntilRenewal}d`);}
@@ -53,10 +53,10 @@ function score(a, criteria, outcomes) {
   const am=a.arr>=150000?1+0.6*w.arrValue:a.arr>=75000?1+0.3*w.arrValue:a.arr>=40000?1+0.1*w.arrValue:1;
   if(a.openTickets>=3){r+=20*w.supportHealth;reasons.push(`${a.openTickets} open tickets`);}
   else if(a.openTickets>=1){r+=6*w.supportHealth;reasons.push(`${a.openTickets} ticket(s)`);}
-  if(a.notes.includes("competitor")||a.notes.includes("Competitor")){r+=15;reasons.push("Competitive threat");}
-  if(a.notes.includes("champion")&&a.notes.includes("left")){r+=18;reasons.push("Champion departed");}
-  if(a.notes.includes("Series B")||a.notes.includes("headcount")){o+=12;reasons.push("Company scaling");}
-  if(a.notes.includes("migration")||a.notes.includes("data export")){r+=20;reasons.push("Migration/export activity");}
+  if(a.notes.includes("competitor")||a.notes.includes("Competitor")){r+=15*w.churn;reasons.push("Competitive threat");}
+  if(a.notes.includes("champion")&&a.notes.includes("left")){r+=18*w.churn;reasons.push("Champion departed");}
+  if(a.notes.includes("Series B")||a.notes.includes("headcount")){o+=12*w.expansion;reasons.push("Company scaling");}
+  if(a.notes.includes("migration")||a.notes.includes("data export")){r+=20*w.churn;reasons.push("Migration/export activity");}
   const oc=outcomes?.[a.id];
   if(oc?.rating==="negative"){r+=15;reasons.push("Previous interaction: Negative — escalated priority");}
   if(oc?.rating==="neutral"){reasons.push("Previous interaction: Neutral — monitoring");}
