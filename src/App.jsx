@@ -56,7 +56,7 @@ function score(a, criteria, outcomes) {
   if(a.notes.includes("Series B")||a.notes.includes("headcount")){o+=12;reasons.push("Company scaling");}
   if(a.notes.includes("migration")||a.notes.includes("data export")){r+=20;reasons.push("Migration/export activity");}
   const oc=outcomes?.[a.id];
-  if(oc?.rating==="negative"){r+=15;reasons.push("Previous interaction: Negative — escalated priority");console.log(`[score] ${a.name} (id:${a.id}) — Negative outcome +15 applied, risk=${r}`);}
+  if(oc?.rating==="negative"){r+=15;reasons.push("Previous interaction: Negative — escalated priority");}
   if(oc?.rating==="neutral"){reasons.push("Previous interaction: Neutral — monitoring");}
   let sc=Math.min(100,Math.round((u+r+o)*am));
   if(oc?.rating==="positive"){sc=Math.max(0,sc-10);reasons.push("Previous interaction: Positive — reduced urgency");}
