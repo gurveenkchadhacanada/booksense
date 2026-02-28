@@ -146,9 +146,6 @@ function Detail({account:a,onBack,decisions,setDecisions}){
     :ai?<div style={{background:S.ac+"0d",border:`1px solid ${S.ac}28`,borderRadius:7,padding:16,marginBottom:12}}>
       <div style={{fontSize:14,fontWeight:700,color:S.tx,marginBottom:6}}>"{ai.headline}"</div>
       <p style={{fontSize:12,lineHeight:1.7,color:S.so,margin:"0 0 10px"}}>{ai.assessment}</p>
-      <div style={{background:S.bg,borderRadius:5,padding:10,marginBottom:10,borderLeft:`3px solid ${S.ac}`}}>
-        <div style={{fontSize:8,fontWeight:700,color:S.as,textTransform:"uppercase",marginBottom:3}}>→ Do First</div>
-        <div style={{fontSize:12,color:S.tx}}>{ai.first_action}</div></div>
       {ai.talking_points?.map((t,i)=><div key={i} style={{fontSize:11,color:S.so,padding:"5px 9px",background:S.bg,borderRadius:4,marginBottom:3}}>{t}</div>)}
       {ai.watch_out&&<div style={{fontSize:11,color:S.ur,marginTop:6}}>⚠ {ai.watch_out}</div>}</div>:null}
     {dg&&<div style={{background:S.ri+"08",border:`1px solid ${S.ri}28`,borderRadius:7,padding:16,marginBottom:12}}>
@@ -350,10 +347,11 @@ export default function BookSense(){
     :view==="criteria"?<CriteriaPage criteria={criteria} setCriteria={setCriteria} onBack={()=>setView("board")} scored={scored} outcomes={outcomes}/>
     :<div style={{padding:"18px 24px"}}>
       <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap"}}>
-        {[["Book ARR",`$${(totalARR/1e6).toFixed(1)}M`],["At Risk",scored.filter(x=>x.riskLevel==="critical").length,S.ri],["Zero-Touch",zt,zt?S.ri:S.op],["Gone Dark",dark,dark?S.ur:S.op]].map(([l,v,c])=>
+        {[["Book ARR",`$${(totalARR/1e6).toFixed(1)}M`,null,null],["At Risk",scored.filter(x=>x.riskLevel==="critical").length,S.ri,null],["Zero-Touch",zt,zt?S.ri:S.op,"no human contact"],["Gone Dark",dark,dark?S.ur:S.op,"no response 30d+"]].map(([l,v,c,sub])=>
           <div key={l} style={{background:S.sf,border:`1px solid ${S.bd}`,borderRadius:7,padding:"11px 14px",flex:"1 1 105px",minWidth:105}}>
             <div style={{fontSize:9,color:S.mu,textTransform:"uppercase",letterSpacing:".06em",marginBottom:3}}>{l}</div>
-            <div style={{fontSize:19,fontWeight:700,color:c||S.tx,fontFamily:"monospace"}}>{v}</div></div>)}</div>
+            <div style={{fontSize:19,fontWeight:700,color:c||S.tx,fontFamily:"monospace"}}>{v}</div>
+            {sub&&<div style={{fontSize:8,color:S.dm,marginTop:2}}>{sub}</div>}</div>)}</div>
       <div style={{background:S.ac+"0d",border:`1px solid ${S.ac}28`,borderRadius:7,padding:14,marginBottom:12}}>
         <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:8}}>
           <span style={{fontSize:11}}>🤖</span><span style={{fontSize:9,fontWeight:700,color:S.as,textTransform:"uppercase"}}>Portfolio Assessment</span></div>
@@ -383,9 +381,7 @@ export default function BookSense(){
           onMouseEnter={e=>{if(!st)e.currentTarget.style.background=S.ra}} onMouseLeave={e=>{e.currentTarget.style.background=st==="contacted"?S.op+"0a":"transparent"}}>
           <div onClick={()=>{setSelected(a);setView("detail");}} style={{fontSize:11,fontWeight:700,color:idx<3?S.ri:idx<7?S.ur:S.dm,fontFamily:"monospace"}}>#{idx+1}</div>
           <div onClick={()=>{setSelected(a);setView("detail");}}>
-            <div style={{fontSize:12,fontWeight:600,color:S.tx,marginBottom:1}}>{a.name}</div>
-            {reasonMap?.[a.id]?<div style={{fontSize:9,color:S.mu,fontStyle:"italic"}}>{reasonMap[a.id]}</div>
-            :<div style={{fontSize:9,color:S.mu}}>{a.industry} · {a.tier}</div>}</div>
+            <div style={{fontSize:12,fontWeight:600,color:S.tx}}>{a.name}</div></div>
           <div style={{fontSize:10,fontWeight:600,fontFamily:"monospace",color:S.tx}}>${(a.arr/1000)|0}k</div>
           <div style={{fontSize:10,fontWeight:600,fontFamily:"monospace",color:a.usageTrend<0?S.ri:S.op}}>{a.usageTrend>0?"+":""}{a.usageTrend}%</div>
           <div style={{fontSize:10,fontFamily:"monospace",color:a.daysUntilRenewal<=30?S.ri:a.daysUntilRenewal<=60?S.ur:S.mu}}>{a.daysUntilRenewal}d</div>
