@@ -122,7 +122,7 @@ function Detail({account:a,onBack,decisions,setDecisions}){
       <div style={{display:"flex",gap:5}}>{[0,1,2,3,4].map(i=><div key={i} style={{width:8,height:8,borderRadius:"50%",background:S.ac,animation:`bp 1.4s ease ${i*.12}s infinite`}}/>)}</div>
       <div style={{fontSize:13,color:S.so}}>Analyzing account signals...</div>
       <div style={{fontSize:10,color:S.dm}}>Cross-referencing CRM, support, and email data</div></div></div>);
-  const CRIT_SIGNALS=/renewal|usage crash|champion depart|migration|export|competitive threat/i;
+  const CRIT_SIGNALS=/renewal|usage|champion|migration|competitive|export/i;
   const WARN_SIGNALS=/nps|ticket|touch/i;
   const sigColor=(r)=>CRIT_SIGNALS.test(r)?S.ri:WARN_SIGNALS.test(r)?S.ur:S.dm;
   return(<div style={{padding:20}}>
@@ -134,7 +134,7 @@ function Detail({account:a,onBack,decisions,setDecisions}){
     </div>
     <div style={{fontSize:11,color:S.mu,marginBottom:18}}>{a.industry} · {a.tier} · ${a.arr.toLocaleString()} ARR</div>
     <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:18}}>
-      {[["Usage",`${a.usageTrend>0?"+":""}${a.usageTrend}%`,a.usageTrend<0?S.ri:S.op,"Product usage change (30d)"],["Renewal",`${a.daysUntilRenewal}d`,a.daysUntilRenewal<=30?S.ri:S.mu,"Days until contract renewal"],["Last Touch",`${a.daysSinceLastTouch}d`,a.daysSinceLastTouch>60?S.ri:S.mu,"Days since last CSM contact"],["NPS",`${a.npsScore}/10`,a.npsScore>=8?S.op:a.npsScore<=4?S.ri:S.ur,"Net Promoter Score (last survey)"],["Tickets",a.openTickets,a.openTickets>=2?S.ri:S.mu,"Open support tickets"],["Touches (90d)",a.totalTouchpoints,a.totalTouchpoints<=1?S.ri:S.mu,"Total CSM touchpoints (90d)"]].map(([l,v,c,tip])=>
+      {[["Usage",`${a.usageTrend>0?"+":""}${a.usageTrend}%`,a.usageTrend<0?S.ri:S.op,"Product usage change (30d)"],["Renewal",`${a.daysUntilRenewal}d`,a.daysUntilRenewal<=30?S.ri:S.mu,"Days until contract renewal"],["Last Touch",`${a.daysSinceLastTouch}d`,a.daysSinceLastTouch>60?S.ri:S.mu,"Days since last CSM contact"],["NPS",`${a.npsScore}/10`,a.npsScore>=8?S.op:a.npsScore<=4?S.ri:S.ur,"Net Promoter Score (last survey)"],["Tickets",a.openTickets,a.openTickets>=2?S.ri:S.mu,"Open support tickets"],["Touches (90d)",a.totalTouchpoints,a.totalTouchpoints<=1?S.ri:S.mu,"Total CSM touchpoints in last 90 days"]].map(([l,v,c,tip])=>
         <div key={l} title={tip} style={{background:S.sf,border:`1px solid ${S.bd}`,borderRadius:7,padding:"10px 14px",flex:"1 1 100px",minWidth:100}}>
           <div style={{fontSize:9,color:S.mu,textTransform:"uppercase",letterSpacing:".06em",marginBottom:3}}>{l}</div>
           <div style={{fontSize:18,fontWeight:700,color:c,fontFamily:"monospace"}}>{v}</div>
@@ -239,7 +239,7 @@ function CriteriaPage({criteria,setCriteria,onBack,scored,outcomes}){
     if(movers.length>0){const m=movers[0];const oldIdx=scored.findIndex(a=>a.id===m.id);const newIdx=newScored.findIndex(a=>a.id===m.id);setPreview(`This would move ${m.name} from #${oldIdx+1} → #${newIdx+1}`);setTimeout(()=>setPreview(null),3000);}
     setCriteria(l);};
   return(<div style={{padding:20,maxWidth:460,margin:"0 auto"}}>
-    <button onClick={onBack} style={{background:"none",border:"none",color:S.as,cursor:"pointer",fontSize:12,marginBottom:14,padding:0}}>← Back</button>
+    <button onClick={onBack} style={{background:"none",border:"none",color:S.as,cursor:"pointer",fontSize:12,marginBottom:14,padding:0}}>← Back to Action Board</button>
     <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:4}}>
       <h2 style={{fontSize:20,fontWeight:700,color:S.tx,margin:0}}>Q1 Strategy</h2>
       <span style={{background:"rgba(124,92,252,0.15)",color:"#b8a5ff",padding:"4px 12px",borderRadius:5,fontSize:12,fontWeight:600,letterSpacing:".02em"}}>{STRATEGY_LABELS[criteria[0]?.id]||"Custom"} Mode</span></div>
@@ -378,7 +378,7 @@ export default function BookSense(){
         {[{k:"all",l:`All (${scored.length})`},{k:"urgency",l:`Urgent (${counts.urgency})`,c:S.ur},{k:"risk",l:`Risk (${counts.risk})`,c:S.ri},{k:"opportunity",l:`Opp (${counts.opportunity})`,c:S.op}].map(f=>
           <button key={f.k} onClick={()=>setFilter(f.k)} style={{padding:"4px 9px",borderRadius:4,fontSize:10,fontWeight:600,cursor:"pointer",background:filter===f.k?(f.c||S.ac)+"18":"transparent",border:`1px solid ${filter===f.k?(f.c||S.ac):S.bd}`,color:filter===f.k?(f.c||S.as):S.mu}}>{f.l}</button>)}</div>
       <div style={{display:"grid",gridTemplateColumns:"32px 1.5fr 62px 48px 48px 58px 52px 1fr 60px",padding:"5px 12px",borderBottom:`1px solid ${S.bd}44`,gap:5}}>
-        {[["#"],["Account"],["ARR"],["Usage","Change in product usage (30d)"],["Renew","Days until renewal"],["Signal","Primary risk or opportunity signal"],["Risk","AI-assessed risk level"],["Action","AI-recommended next step"],["Status"]].map(([h,tip])=>
+        {[["#"],["Account"],["ARR"],["Usage","Product usage change (30d)"],["Renew","Days until renewal"],["Signal","Primary risk or opportunity signal"],["Risk","AI-assessed risk level"],["Action","AI-recommended next step"],["Status"]].map(([h,tip])=>
           <div key={h} title={tip||""} style={{fontSize:8,fontWeight:700,color:S.dm,textTransform:"uppercase",letterSpacing:".08em",cursor:tip?"help":"default"}}>{h}</div>)}</div>
       {filtered.map((a,idx)=>{const st=actions[a.id];return(
         <div key={a.id} style={{display:"grid",gridTemplateColumns:"32px 1.5fr 62px 48px 48px 58px 52px 1fr 60px",padding:"9px 12px",borderBottom:`1px solid ${S.bd}`,cursor:"pointer",gap:5,alignItems:"center",animation:`fi 0.2s ease ${idx*.02}s both`,opacity:st==="skipped"?0.35:1,background:st==="contacted"?S.op+"0a":"transparent"}}
