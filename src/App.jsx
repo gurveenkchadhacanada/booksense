@@ -277,6 +277,7 @@ export default function BookSense(){
   const[criteria,setCriteria]=useState(CRITERIA);
   const[actions,setActions]=useState(()=>{try{return JSON.parse(localStorage.getItem("bs_actions"))||{};}catch{return{};}});
   const[outcomes,setOutcomes]=useState(()=>{try{return JSON.parse(localStorage.getItem("bs_outcomes"))||{};}catch{return{};}});
+  const[patternsOpen,setPatternsOpen]=useState(false);
   const[outcomeModal,setOutcomeModal]=useState(null);
   const[outcomeNote,setOutcomeNote]=useState("");
   const[portfolioAI,setPortfolioAI]=useState(()=>{try{return JSON.parse(localStorage.getItem("bs_portfolioAI"));}catch{return null;}});
@@ -343,8 +344,10 @@ export default function BookSense(){
         <p style={{fontSize:12,lineHeight:1.7,color:S.tx,margin:0}}>{portfolioAI?.portfolio_summary||summary}</p></div>
       <div style={{fontSize:9,color:S.dm,marginBottom:12,marginTop:-8}}>🗄 Data sources: Salesforce CRM · Zendesk Support · Gmail</div>
       {portfolioAI?.cross_account_patterns?.length>0&&<div style={{background:S.sf,border:`1px solid ${S.bd}`,borderRadius:7,padding:14,marginBottom:18}}>
-        <div style={{fontSize:9,fontWeight:700,color:S.mu,textTransform:"uppercase",letterSpacing:".06em",marginBottom:8}}>Cross-Account Patterns</div>
-        {portfolioAI.cross_account_patterns.map((p,i)=><div key={i} style={{fontSize:11,color:S.so,padding:"6px 9px",background:S.bg,borderRadius:4,borderLeft:`3px solid ${S.ac}`,marginBottom:3,lineHeight:1.5}}>{p}</div>)}</div>}
+        <div onClick={()=>setPatternsOpen(p=>!p)} style={{display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer"}}>
+          <div style={{fontSize:9,fontWeight:700,color:S.mu,textTransform:"uppercase",letterSpacing:".06em"}}>{portfolioAI.cross_account_patterns.length} cross-account patterns detected</div>
+          <span style={{fontSize:10,color:S.dm}}>{patternsOpen?"▾":"▸"}</span></div>
+        {patternsOpen&&<div style={{marginTop:8}}>{portfolioAI.cross_account_patterns.map((p,i)=><div key={i} style={{fontSize:11,color:S.so,padding:"6px 9px",background:S.bg,borderRadius:4,borderLeft:`3px solid ${S.ac}`,marginBottom:3,lineHeight:1.5}}>{p}</div>)}</div>}</div>}
       <h2 style={{fontSize:19,fontWeight:700,marginBottom:3}}>Daily Action Board</h2>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
         <p style={{fontSize:11,color:S.mu,margin:0}}>Click any row for deep briefing. Mark contacted ✓ or skipped ✗.</p>
@@ -353,11 +356,11 @@ export default function BookSense(){
         <input placeholder="Search..." value={search} onChange={e=>setSearch(e.target.value)} style={{padding:"5px 10px",borderRadius:5,border:`1px solid ${S.bd}`,background:S.sf,color:S.tx,fontSize:11,width:140,outline:"none"}}/>
         {[{k:"all",l:`All (${scored.length})`},{k:"risk",l:`Risk (${counts.risk})`,c:S.ri},{k:"opportunity",l:`Opp (${counts.opportunity})`,c:S.op},{k:"urgency",l:`Urgent (${counts.urgency})`,c:S.ur}].map(f=>
           <button key={f.k} onClick={()=>setFilter(f.k)} style={{padding:"4px 9px",borderRadius:4,fontSize:10,fontWeight:600,cursor:"pointer",background:filter===f.k?(f.c||S.ac)+"18":"transparent",border:`1px solid ${filter===f.k?(f.c||S.ac):S.bd}`,color:filter===f.k?(f.c||S.as):S.mu}}>{f.l}</button>)}</div>
-      <div style={{display:"grid",gridTemplateColumns:"32px 1.5fr 68px 48px 52px 68px 52px 1fr 60px",padding:"5px 12px",borderBottom:`1px solid ${S.bd}44`,gap:5}}>
+      <div style={{display:"grid",gridTemplateColumns:"32px 1.5fr 62px 48px 48px 58px 52px 1fr 60px",padding:"5px 12px",borderBottom:`1px solid ${S.bd}44`,gap:5}}>
         {["#","Account","ARR","Usage","Renew","Signal","Risk","Action","Status"].map(h=>
           <div key={h} style={{fontSize:8,fontWeight:700,color:S.dm,textTransform:"uppercase",letterSpacing:".08em"}}>{h}</div>)}</div>
       {filtered.map((a,idx)=>{const st=actions[a.id];return(
-        <div key={a.id} style={{display:"grid",gridTemplateColumns:"32px 1.5fr 68px 48px 52px 68px 52px 1fr 60px",padding:"9px 12px",borderBottom:`1px solid ${S.bd}`,cursor:"pointer",gap:5,alignItems:"center",animation:`fi 0.2s ease ${idx*.02}s both`,opacity:st==="skipped"?0.35:1,background:st==="contacted"?S.op+"0a":"transparent"}}
+        <div key={a.id} style={{display:"grid",gridTemplateColumns:"32px 1.5fr 62px 48px 48px 58px 52px 1fr 60px",padding:"9px 12px",borderBottom:`1px solid ${S.bd}`,cursor:"pointer",gap:5,alignItems:"center",animation:`fi 0.2s ease ${idx*.02}s both`,opacity:st==="skipped"?0.35:1,background:st==="contacted"?S.op+"0a":"transparent"}}
           onMouseEnter={e=>{if(!st)e.currentTarget.style.background=S.ra}} onMouseLeave={e=>{e.currentTarget.style.background=st==="contacted"?S.op+"0a":"transparent"}}>
           <div onClick={()=>{setSelected(a);setView("detail");}} style={{fontSize:11,fontWeight:700,color:idx<3?S.ri:idx<7?S.ur:S.dm,fontFamily:"monospace"}}>#{idx+1}</div>
           <div onClick={()=>{setSelected(a);setView("detail");}}>
@@ -367,7 +370,7 @@ export default function BookSense(){
           <div style={{fontSize:10,fontWeight:600,fontFamily:"monospace",color:S.tx}}>${(a.arr/1000)|0}k</div>
           <div style={{fontSize:10,fontWeight:600,fontFamily:"monospace",color:a.usageTrend<0?S.ri:S.op}}>{a.usageTrend>0?"+":""}{a.usageTrend}%</div>
           <div style={{fontSize:10,fontFamily:"monospace",color:a.daysUntilRenewal<=30?S.ri:a.daysUntilRenewal<=60?S.ur:S.mu}}>{a.daysUntilRenewal}d</div>
-          <div><span style={{background:cc[a.category]+"18",color:cc[a.category],border:`1px solid ${cc[a.category]}44`,padding:"2px 7px",borderRadius:4,fontSize:9,fontWeight:700,textTransform:"uppercase"}}>{a.category}</span>
+          <div><span style={{background:cc[a.category]+"18",color:cc[a.category],border:`1px solid ${cc[a.category]}44`,padding:"2px 5px",borderRadius:4,fontSize:8,fontWeight:700,textTransform:"uppercase",whiteSpace:"nowrap"}}>{{risk:"risk",opportunity:"opp",urgency:"urgent"}[a.category]}</span>
             {outcomes[a.id]&&<div style={{fontSize:8,color:outcomes[a.id].rating==="positive"?S.op:outcomes[a.id].rating==="neutral"?S.ur:S.ri,marginTop:2}}>🔄 {outcomes[a.id].rating.charAt(0).toUpperCase()+outcomes[a.id].rating.slice(1)}</div>}</div>
           <div style={{fontSize:9,fontWeight:600,color:rc[a.riskLevel]}}>{a.riskLevel}</div>
           <div onClick={()=>{setSelected(a);setView("detail");}} style={{fontSize:10,color:S.so,lineHeight:1.35,overflow:"hidden",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>{a.action}</div>
